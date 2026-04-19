@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planning Boutiques</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5f4f0;
+        --surface: #ffffff;
+        --surface2: #f0efe9;
+        --border: #e2e0d8;
+        --border2: #ccc9bc;
+        --text: #1a1a18;
+        --text2: #6b6960;
+        --text3: #9c9a91;
+        --accent: #2d5a3d;
+        --accent-light: #e8f0ea;
+        --present-bg: #e8f5ec;
+        --present-text: #1e6b35;
+        --repos-bg: #fdecea;
+        --repos-text: #b93535;
+        --conge-bg: #fef3e2;
+        --conge-text: #8a5a00;
+        --indef-bg: #f0efe9;
+        --indef-text: #7a7870;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        font-size: 14px;
+      }
+
+      header {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 56px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .logo {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      .logo span {
+        color: var(--accent);
+      }
+
+      .header-nav {
+        display: flex;
+        gap: 6px;
+      }
+
+      .btn {
+        padding: 6px 14px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border2);
+        background: var(--surface);
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        font-weight: 500;
+      }
+      .btn:hover {
+        background: var(--surface2);
+        border-color: var(--border2);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .btn.primary:hover {
+        background: #235030;
+      }
+      .btn.danger {
+        background: #fff;
+        color: var(--repos-text);
+        border-color: #f5c0bc;
+      }
+      .btn.danger:hover {
+        background: var(--repos-bg);
+      }
+      .btn.small {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 1.5rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 4px;
+        width: fit-content;
+      }
+      .tab {
+        padding: 6px 18px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--text2);
+        transition: all 0.15s;
+        border: none;
+        background: none;
+        font-family: "DM Sans", sans-serif;
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .tab:hover:not(.active) {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      /* Panel */
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+
+      /* Week nav */
+      .week-nav {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.5rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 10px 16px;
+        width: fit-content;
+      }
+      .week-nav .btn {
+        padding: 4px 12px;
+      }
+      .week-info {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .week-info span {
+        color: var(--text2);
+        font-weight: 400;
+        font-size: 13px;
+        margin-left: 6px;
+      }
+
+      /* Planning table */
+      .planning-table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      th {
+        background: var(--surface2);
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--text2);
+        padding: 8px 12px;
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+      }
+      th.name-th {
+        text-align: left;
+        width: 130px;
+      }
+      td {
+        padding: 7px 10px;
+        border-bottom: 0.5px solid var(--border);
+        text-align: center;
+        vertical-align: middle;
+      }
+      td.name-cell {
+        text-align: left;
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--text);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .shop-row td {
+        background: #f8f7f3;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: var(--text2);
+        padding: 5px 12px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 500;
+        width: 100%;
+        text-align: center;
+      }
+      .badge.present {
+        background: var(--present-bg);
+        color: var(--present-text);
+      }
+      .badge.repos {
+        background: var(--repos-bg);
+        color: var(--repos-text);
+      }
+      .badge.conge {
+        background: var(--conge-bg);
+        color: var(--conge-text);
+      }
+      .badge.indef {
+        background: var(--indef-bg);
+        color: var(--indef-text);
+      }
+
+      /* Legend */
+      .legend {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .leg {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text2);
+      }
+      .leg-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+      }
+
+      /* Cards grid */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: var(--surface2);
+        border-bottom: 1px solid var(--border);
+      }
+      .card-header h3 {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .card-body {
+        padding: 12px 16px;
+      }
+
+      .employee-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 0.5px solid var(--border);
+      }
+      .employee-row:last-child {
+        border-bottom: none;
+      }
+      .employee-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .employee-name {
+        font-weight: 500;
+        font-size: 13px;
+      }
+      .employee-repos {
+        font-size: 11px;
+        color: var(--text2);
+      }
+      .employee-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      /* Modal */
+      .modal-bg {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-bg.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        width: 420px;
+        max-width: 95vw;
+        padding: 24px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .modal h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 1.25rem;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text2);
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        background: var(--surface);
+        color: var(--text);
+        outline: none;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: var(--accent);
+      }
+      .form-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 1.25rem;
+      }
+
+      .repos-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .repos-day {
+        padding: 5px 12px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border2);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        background: var(--surface);
+        color: var(--text2);
+        transition: all 0.12s;
+        user-select: none;
+      }
+      .repos-day.selected {
+        background: var(--repos-bg);
+        color: var(--repos-text);
+        border-color: #f5a0a0;
+      }
+      .repos-day.alt-label {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      .kevin-toggle {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .kevin-toggle label {
+        font-size: 12px;
+        color: var(--text2);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+      }
+
+      .conge-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .conge-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        background: var(--conge-bg);
+        border-radius: var(--radius);
+        font-size: 12px;
+        color: var(--conge-text);
+      }
+
+      .add-shop-area {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text3);
+        font-size: 13px;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">Planning <span>Boutiques</span></div>
+      <div class="header-nav">
+        <button class="btn small" onclick="exportData()">Exporter</button>
+        <button class="btn small" onclick="importData()">Importer</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('planning')">
+          Planning
+        </button>
+        <button class="tab" onclick="switchTab('conges')">Congés</button>
+        <button class="tab" onclick="switchTab('equipes')">Équipes</button>
+      </div>
+
+      <!-- PLANNING -->
+      <div class="panel active" id="panel-planning">
+        <div class="week-nav">
+          <button class="btn" onclick="changeWeek(-1)">&#8592;</button>
+          <div class="week-info" id="week-info"></div>
+          <button class="btn" onclick="changeWeek(1)">&#8594;</button>
+          <button class="btn small" onclick="goToday()">Aujourd'hui</button>
+        </div>
+        <div class="legend">
+          <div class="leg">
+            <div
+              class="leg-dot"
+              style="background: var(--present-bg); border: 1px solid #97c4a0"
+            ></div>
+            Présent
+          </div>
+          <div class="leg">
+            <div
+              class="leg-dot"
+              style="background: var(--repos-bg); border: 1px solid #f5a0a0"
+            ></div>
+            Repos
+          </div>
+          <div class="leg">
+            <div
+              class="leg-dot"
+              style="background: var(--conge-bg); border: 1px solid #e8c87a"
+            ></div>
+            Congé
+          </div>
+          <div class="leg">
+            <div
+              class="leg-dot"
+              style="background: var(--indef-bg); border: 1px solid #ccc9bc"
+            ></div>
+            Indéfini
+          </div>
+        </div>
+        <div class="planning-table-wrap">
+          <table id="planning-table">
+            <thead>
+              <tr>
+                <th class="name-th">Salarié</th>
+                <th>Lun</th>
+                <th>Mar</th>
+                <th>Mer</th>
+                <th>Jeu</th>
+                <th>Ven</th>
+                <th>Sam</th>
+              </tr>
+            </thead>
+            <tbody id="planning-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONGES -->
+      <div class="panel" id="panel-conges">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+          "
+        >
+          <div class="section-title" style="margin-bottom: 0">
+            Gestion des congés
+          </div>
+          <button class="btn primary" onclick="openCongeModal()">
+            + Ajouter un congé
+          </button>
+        </div>
+        <div id="conges-list"></div>
+      </div>
+
+      <!-- EQUIPES -->
+      <div class="panel" id="panel-equipes">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+          "
+        >
+          <div class="section-title" style="margin-bottom: 0">
+            Boutiques & salariés
+          </div>
+          <button class="btn primary" onclick="openShopModal()">
+            + Nouvelle boutique
+          </button>
+        </div>
+        <div class="cards" id="equipes-cards"></div>
+      </div>
+    </main>
+
+    <!-- Modal Congé -->
+    <div class="modal-bg" id="modal-conge">
+      <div class="modal">
+        <h2>Ajouter un congé</h2>
+        <div class="form-group">
+          <label>Salarié</label>
+          <select id="conge-emp"></select>
+        </div>
+        <div class="form-group">
+          <label>Semaine</label>
+          <input
+            type="number"
+            id="conge-week"
+            min="1"
+            max="52"
+            placeholder="Ex: 16"
+          />
+        </div>
+        <div class="form-group">
+          <label>Année</label>
+          <input
+            type="number"
+            id="conge-year"
+            value="2026"
+            min="2024"
+            max="2030"
+          />
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal('modal-conge')">
+            Annuler
+          </button>
+          <button class="btn primary" onclick="saveConge()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Boutique -->
+    <div class="modal-bg" id="modal-shop">
+      <div class="modal">
+        <h2 id="shop-modal-title">Nouvelle boutique</h2>
+        <div class="form-group">
+          <label>Nom de la boutique</label>
+          <input type="text" id="shop-name" placeholder="Ex: Saint-Leu" />
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal('modal-shop')">
+            Annuler
+          </button>
+          <button class="btn primary" onclick="saveShop()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Salarié -->
+    <div class="modal-bg" id="modal-emp">
+      <div class="modal">
+        <h2 id="emp-modal-title">Nouveau salarié</h2>
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" id="emp-name" placeholder="Ex: Marie" />
+        </div>
+        <div class="form-group">
+          <label>Boutique</label>
+          <select id="emp-shop"></select>
+        </div>
+        <div class="form-group">
+          <label>Jour(s) de repos</label>
+          <div class="repos-selector" id="repos-selector">
+            <div class="repos-day" data-day="0">Lun</div>
+            <div class="repos-day" data-day="1">Mar</div>
+            <div class="repos-day" data-day="2">Mer</div>
+            <div class="repos-day" data-day="3">Jeu</div>
+            <div class="repos-day" data-day="4">Ven</div>
+            <div class="repos-day" data-day="5">Sam</div>
+          </div>
+        </div>
+        <div class="form-group" id="alt-repos-group" style="display: none">
+          <label>Repos alterné (semaines paires / impaires)</label>
+          <div
+            style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px"
+          >
+            <select id="alt-even" style="flex: 1">
+              <option value="">Sem. paires — choisir</option>
+              <option value="0">Lundi</option>
+              <option value="1">Mardi</option>
+              <option value="2">Mercredi</option>
+              <option value="3">Jeudi</option>
+              <option value="4">Vendredi</option>
+              <option value="5">Samedi</option>
+            </select>
+            <select id="alt-odd" style="flex: 1">
+              <option value="">Sem. impaires — choisir</option>
+              <option value="0">Lundi</option>
+              <option value="1">Mardi</option>
+              <option value="2">Mercredi</option>
+              <option value="3">Jeudi</option>
+              <option value="4">Vendredi</option>
+              <option value="5">Samedi</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              cursor: pointer;
+              text-transform: none;
+              letter-spacing: 0;
+            "
+          >
+            <input
+              type="checkbox"
+              id="repos-alt-check"
+              onchange="toggleAltRepos()"
+            />
+            Repos alterné (semaines paires/impaires)
+          </label>
+        </div>
+        <div class="form-group">
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              cursor: pointer;
+              text-transform: none;
+              letter-spacing: 0;
+            "
+          >
+            <input
+              type="checkbox"
+              id="repos-indef-check"
+              onchange="toggleIndefinit()"
+            />
+            Repos indéfini
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal('modal-emp')">Annuler</button>
+          <button class="btn primary" onclick="saveEmployee()">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+      const DAY_NAMES = [
+        "Lundi",
+        "Mardi",
+        "Mercredi",
+        "Jeudi",
+        "Vendredi",
+        "Samedi",
+      ];
+
+      // ── État ──────────────────────────────────────────────
+      let state = loadState();
+      let currentWeek = getISOWeek(new Date());
+      let currentYear = new Date().getFullYear();
+      let editingShopId = null;
+      let editingEmpId = null;
+      let editingEmpShopId = null;
+
+      function defaultState() {
+        return {
+          shops: [
+            {
+              id: "sp",
+              name: "Saint-Pierre",
+              employees: [
+                {
+                  id: "nicolas",
+                  name: "Nicolas",
+                  repos: [0],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "gregory",
+                  name: "Gregory",
+                  repos: [2],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "corentin",
+                  name: "Corentin",
+                  repos: [4],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "kevin",
+                  name: "Kevin",
+                  repos: [],
+                  alt: true,
+                  altEven: 1,
+                  altOdd: 3,
+                  indefini: false,
+                },
+              ],
+            },
+            {
+              id: "spl",
+              name: "Saint-Paul",
+              employees: [
+                {
+                  id: "luc",
+                  name: "Luc",
+                  repos: [1],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "matthias",
+                  name: "Matthias",
+                  repos: [3],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "dimitri",
+                  name: "Dimitri",
+                  repos: [2],
+                  alt: false,
+                  indefini: false,
+                },
+              ],
+            },
+            {
+              id: "sm",
+              name: "Sainte-Marie",
+              employees: [
+                {
+                  id: "lisa",
+                  name: "Lisa",
+                  repos: [],
+                  alt: false,
+                  indefini: true,
+                },
+                {
+                  id: "jerome",
+                  name: "Jérôme",
+                  repos: [0],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "xavier",
+                  name: "Xavier",
+                  repos: [2],
+                  alt: false,
+                  indefini: false,
+                },
+                {
+                  id: "luca",
+                  name: "Luca",
+                  repos: [],
+                  alt: false,
+                  indefini: true,
+                },
+              ],
+            },
+          ],
+          conges: [{ empId: "corentin", week: 16, year: 2026 }],
+        };
+      }
+
+      function loadState() {
+        try {
+          const s = localStorage.getItem("planning_boutiques");
+          return s ? JSON.parse(s) : defaultState();
+        } catch (e) {
+          return defaultState();
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem("planning_boutiques", JSON.stringify(state));
+      }
+
+      // ── Dates ──────────────────────────────────────────────
+      function getISOWeek(date) {
+        const d = new Date(
+          Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+        );
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+      }
+
+      function getWeekDates(week, year) {
+        const jan4 = new Date(year, 0, 4);
+        const s = new Date(jan4);
+        s.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+        const mon = new Date(s);
+        mon.setDate(s.getDate() + (week - 1) * 7);
+        const sat = new Date(mon);
+        sat.setDate(mon.getDate() + 5);
+        const fmt = (d) => d.getDate() + "/" + (d.getMonth() + 1);
+        return fmt(mon) + " – " + fmt(sat);
+      }
+
+      function changeWeek(dir) {
+        currentWeek += dir;
+        if (currentWeek > 52) {
+          currentWeek = 1;
+          currentYear++;
+        }
+        if (currentWeek < 1) {
+          currentWeek = 52;
+          currentYear--;
+        }
+        renderPlanning();
+      }
+
+      function goToday() {
+        currentWeek = getISOWeek(new Date());
+        currentYear = new Date().getFullYear();
+        renderPlanning();
+      }
+
+      // ── Tabs ──────────────────────────────────────────────
+      function switchTab(tab) {
+        document.querySelectorAll(".tab").forEach((t, i) => {
+          t.classList.toggle(
+            "active",
+            ["planning", "conges", "equipes"][i] === tab,
+          );
+        });
+        document
+          .querySelectorAll(".panel")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("panel-" + tab).classList.add("active");
+        if (tab === "planning") renderPlanning();
+        if (tab === "conges") renderConges();
+        if (tab === "equipes") renderEquipes();
+      }
+
+      // ── Planning ──────────────────────────────────────────
+      function isEnConge(empId, week, year) {
+        return state.conges.some(
+          (c) => c.empId === empId && c.week === week && c.year === year,
+        );
+      }
+
+      function getRepos(emp, week) {
+        if (emp.indefini) return "indefini";
+        if (emp.alt) {
+          return week % 2 === 0 ? [emp.altEven] : [emp.altOdd];
+        }
+        return emp.repos || [];
+      }
+
+      function renderPlanning() {
+        document.getElementById("week-info").innerHTML =
+          "Semaine " +
+          currentWeek +
+          "<span>" +
+          getWeekDates(currentWeek, currentYear) +
+          "</span>";
+
+        const tbody = document.getElementById("planning-body");
+        tbody.innerHTML = "";
+
+        state.shops.forEach((shop, si) => {
+          if (si > 0) {
+            const sep = document.createElement("tr");
+            sep.innerHTML =
+              '<td colspan="7" style="height:6px;background:var(--bg);border:none;padding:0"></td>';
+            tbody.appendChild(sep);
+          }
+          const hr = document.createElement("tr");
+          hr.className = "shop-row";
+          hr.innerHTML = '<td colspan="7">' + shop.name + "</td>";
+          tbody.appendChild(hr);
+
+          if (!shop.employees.length) {
+            const empty = document.createElement("tr");
+            empty.innerHTML =
+              '<td colspan="7" class="empty-state">Aucun salarié</td>';
+            tbody.appendChild(empty);
+            return;
+          }
+
+          shop.employees.forEach((emp) => {
+            const conge = isEnConge(emp.id, currentWeek, currentYear);
+            const repos = getRepos(emp, currentWeek);
+            const tr = document.createElement("tr");
+            let html = '<td class="name-cell">' + emp.name + "</td>";
+            for (let d = 0; d < 6; d++) {
+              if (conge)
+                html += '<td><span class="badge conge">Congé</span></td>';
+              else if (repos === "indefini")
+                html += '<td><span class="badge indef">?</span></td>';
+              else if (repos.includes(d))
+                html += '<td><span class="badge repos">Repos</span></td>';
+              else html += '<td><span class="badge present">P</span></td>';
+            }
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+          });
+        });
+      }
+
+      // ── Congés ────────────────────────────────────────────
+      function renderConges() {
+        const el = document.getElementById("conges-list");
+        if (!state.conges.length) {
+          el.innerHTML =
+            '<div class="empty-state">Aucun congé enregistré.</div>';
+          return;
+        }
+        const sorted = [...state.conges].sort(
+          (a, b) => a.year - b.year || a.week - b.week,
+        );
+        el.innerHTML = "";
+
+        // Group by employee
+        const grouped = {};
+        sorted.forEach((c) => {
+          const emp = findEmp(c.empId);
+          const key = c.empId;
+          if (!grouped[key])
+            grouped[key] = { name: emp ? emp.name : c.empId, items: [] };
+          grouped[key].items.push(c);
+        });
+
+        const wrap = document.createElement("div");
+        wrap.style.display = "flex";
+        wrap.style.flexDirection = "column";
+        wrap.style.gap = "12px";
+
+        Object.values(grouped).forEach((g) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML =
+            '<div class="card-header"><h3>' + g.name + "</h3></div>";
+          const body = document.createElement("div");
+          body.className = "card-body";
+          g.items.forEach((c) => {
+            const row = document.createElement("div");
+            row.style.cssText =
+              "display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);";
+            row.innerHTML =
+              '<span style="font-size:13px;color:var(--conge-text);font-weight:500">Semaine ' +
+              c.week +
+              " · " +
+              c.year +
+              '<span style="font-size:11px;color:var(--text3);margin-left:8px;">' +
+              getWeekDates(c.week, c.year) +
+              "</span></span>";
+            const del = document.createElement("button");
+            del.className = "btn small danger";
+            del.textContent = "Supprimer";
+            del.onclick = () => deleteConge(c.empId, c.week, c.year);
+            row.appendChild(del);
+            body.appendChild(row);
+          });
+          card.appendChild(body);
+          wrap.appendChild(card);
+        });
+        el.appendChild(wrap);
+      }
+
+      function findEmp(empId) {
+        for (const shop of state.shops) {
+          const e = shop.employees.find((e) => e.id === empId);
+          if (e) return e;
+        }
+        return null;
+      }
+
+      function openCongeModal() {
+        const sel = document.getElementById("conge-emp");
+        sel.innerHTML = "";
+        state.shops.forEach((shop) => {
+          shop.employees.forEach((emp) => {
+            const opt = document.createElement("option");
+            opt.value = emp.id;
+            opt.textContent = emp.name + " (" + shop.name + ")";
+            sel.appendChild(opt);
+          });
+        });
+        document.getElementById("conge-week").value = currentWeek;
+        document.getElementById("conge-year").value = currentYear;
+        document.getElementById("modal-conge").classList.add("open");
+      }
+
+      function saveConge() {
+        const empId = document.getElementById("conge-emp").value;
+        const week = parseInt(document.getElementById("conge-week").value);
+        const year = parseInt(document.getElementById("conge-year").value);
+        if (!empId || isNaN(week) || isNaN(year)) return;
+        const exists = state.conges.some(
+          (c) => c.empId === empId && c.week === week && c.year === year,
+        );
+        if (!exists) state.conges.push({ empId, week, year });
+        saveState();
+        closeModal("modal-conge");
+        renderConges();
+      }
+
+      function deleteConge(empId, week, year) {
+        state.conges = state.conges.filter(
+          (c) => !(c.empId === empId && c.week === week && c.year === year),
+        );
+        saveState();
+        renderConges();
+      }
+
+      // ── Équipes ───────────────────────────────────────────
+      function renderEquipes() {
+        const el = document.getElementById("equipes-cards");
+        el.innerHTML = "";
+        state.shops.forEach((shop) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const header = document.createElement("div");
+          header.className = "card-header";
+          header.innerHTML = "<h3>" + shop.name + "</h3>";
+          const acts = document.createElement("div");
+          acts.style.display = "flex";
+          acts.style.gap = "6px";
+          const btnAdd = document.createElement("button");
+          btnAdd.className = "btn small";
+          btnAdd.textContent = "+ Salarié";
+          btnAdd.onclick = () => openEmpModal(shop.id, null);
+          const btnDel = document.createElement("button");
+          btnDel.className = "btn small danger";
+          btnDel.textContent = "Supprimer";
+          btnDel.onclick = () => deleteShop(shop.id);
+          acts.appendChild(btnAdd);
+          acts.appendChild(btnDel);
+          header.appendChild(acts);
+          card.appendChild(header);
+
+          const body = document.createElement("div");
+          body.className = "card-body";
+          if (!shop.employees.length) {
+            body.innerHTML =
+              '<div style="font-size:12px;color:var(--text3);text-align:center;padding:1rem">Aucun salarié</div>';
+          }
+          shop.employees.forEach((emp) => {
+            const row = document.createElement("div");
+            row.className = "employee-row";
+            let reposLabel = "";
+            if (emp.indefini) reposLabel = "Repos indéfini";
+            else if (emp.alt)
+              reposLabel =
+                "Alterné : " +
+                DAY_NAMES[emp.altEven] +
+                " / " +
+                DAY_NAMES[emp.altOdd];
+            else if (emp.repos && emp.repos.length)
+              reposLabel =
+                "Repos : " + emp.repos.map((d) => DAY_NAMES[d]).join(", ");
+            else reposLabel = "Pas de repos défini";
+
+            row.innerHTML =
+              '<div class="employee-info"><div class="employee-name">' +
+              emp.name +
+              '</div><div class="employee-repos">' +
+              reposLabel +
+              "</div></div>";
+            const ea = document.createElement("div");
+            ea.className = "employee-actions";
+            const btnE = document.createElement("button");
+            btnE.className = "btn small";
+            btnE.textContent = "Modifier";
+            btnE.onclick = () => openEmpModal(shop.id, emp.id);
+            const btnD = document.createElement("button");
+            btnD.className = "btn small danger";
+            btnD.textContent = "Supprimer";
+            btnD.onclick = () => deleteEmployee(shop.id, emp.id);
+            ea.appendChild(btnE);
+            ea.appendChild(btnD);
+            row.appendChild(ea);
+            body.appendChild(row);
+          });
+          card.appendChild(body);
+          el.appendChild(card);
+        });
+      }
+
+      function openShopModal(id) {
+        editingShopId = id || null;
+        document.getElementById("shop-modal-title").textContent = id
+          ? "Modifier la boutique"
+          : "Nouvelle boutique";
+        document.getElementById("shop-name").value = id
+          ? state.shops.find((s) => s.id === id).name
+          : "";
+        document.getElementById("modal-shop").classList.add("open");
+      }
+
+      function saveShop() {
+        const name = document.getElementById("shop-name").value.trim();
+        if (!name) return;
+        if (editingShopId) {
+          state.shops.find((s) => s.id === editingShopId).name = name;
+        } else {
+          state.shops.push({ id: "shop_" + Date.now(), name, employees: [] });
+        }
+        saveState();
+        closeModal("modal-shop");
+        renderEquipes();
+      }
+
+      function deleteShop(id) {
+        if (!confirm("Supprimer cette boutique et tous ses salariés ?")) return;
+        state.shops = state.shops.filter((s) => s.id !== id);
+        saveState();
+        renderEquipes();
+      }
+
+      function openEmpModal(shopId, empId) {
+        editingEmpShopId = shopId;
+        editingEmpId = empId;
+
+        // Populate shop selector
+        const sel = document.getElementById("emp-shop");
+        sel.innerHTML = "";
+        state.shops.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = s.name;
+          if (s.id === shopId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+
+        // Reset form
+        document.getElementById("emp-modal-title").textContent = empId
+          ? "Modifier le salarié"
+          : "Nouveau salarié";
+        document.getElementById("repos-alt-check").checked = false;
+        document.getElementById("repos-indef-check").checked = false;
+        document.getElementById("alt-repos-group").style.display = "none";
+        document.getElementById("repos-selector").style.display = "flex";
+        document
+          .querySelectorAll(".repos-day")
+          .forEach((d) => d.classList.remove("selected"));
+
+        if (empId) {
+          const shop = state.shops.find((s) => s.id === shopId);
+          const emp = shop.employees.find((e) => e.id === empId);
+          document.getElementById("emp-name").value = emp.name;
+          if (emp.indefini) {
+            document.getElementById("repos-indef-check").checked = true;
+            document.getElementById("repos-selector").style.display = "none";
+            document.getElementById("alt-repos-group").style.display = "none";
+          } else if (emp.alt) {
+            document.getElementById("repos-alt-check").checked = true;
+            document.getElementById("alt-repos-group").style.display = "block";
+            document.getElementById("repos-selector").style.display = "none";
+            document.getElementById("alt-even").value = emp.altEven;
+            document.getElementById("alt-odd").value = emp.altOdd;
+          } else {
+            (emp.repos || []).forEach((d) => {
+              document
+                .querySelector('.repos-day[data-day="' + d + '"]')
+                .classList.add("selected");
+            });
+          }
+        } else {
+          document.getElementById("emp-name").value = "";
+        }
+
+        document.getElementById("modal-emp").classList.add("open");
+      }
+
+      function toggleAltRepos() {
+        const alt = document.getElementById("repos-alt-check").checked;
+        if (alt) document.getElementById("repos-indef-check").checked = false;
+        document.getElementById("alt-repos-group").style.display = alt
+          ? "block"
+          : "none";
+        document.getElementById("repos-selector").style.display = alt
+          ? "none"
+          : "flex";
+      }
+
+      function toggleIndefinit() {
+        const indef = document.getElementById("repos-indef-check").checked;
+        if (indef) document.getElementById("repos-alt-check").checked = false;
+        document.getElementById("alt-repos-group").style.display = "none";
+        document.getElementById("repos-selector").style.display = indef
+          ? "none"
+          : "flex";
+      }
+
+      document.querySelectorAll(".repos-day").forEach((el) => {
+        el.onclick = () => el.classList.toggle("selected");
+      });
+
+      function saveEmployee() {
+        const name = document.getElementById("emp-name").value.trim();
+        const targetShopId = document.getElementById("emp-shop").value;
+        const alt = document.getElementById("repos-alt-check").checked;
+        const indefini = document.getElementById("repos-indef-check").checked;
+        if (!name) return;
+
+        const repos = Array.from(
+          document.querySelectorAll(".repos-day.selected"),
+        ).map((d) => parseInt(d.dataset.day));
+        const altEven = parseInt(document.getElementById("alt-even").value);
+        const altOdd = parseInt(document.getElementById("alt-odd").value);
+
+        if (editingEmpId) {
+          const shop = state.shops.find((s) => s.id === editingEmpShopId);
+          const emp = shop.employees.find((e) => e.id === editingEmpId);
+          emp.name = name;
+          emp.repos = repos;
+          emp.alt = alt;
+          emp.altEven = altEven;
+          emp.altOdd = altOdd;
+          emp.indefini = indefini;
+          // Move to different shop if changed
+          if (targetShopId !== editingEmpShopId) {
+            shop.employees = shop.employees.filter(
+              (e) => e.id !== editingEmpId,
+            );
+            state.shops.find((s) => s.id === targetShopId).employees.push(emp);
+          }
+        } else {
+          const emp = {
+            id: "emp_" + Date.now(),
+            name,
+            repos,
+            alt,
+            altEven,
+            altOdd,
+            indefini,
+          };
+          state.shops.find((s) => s.id === targetShopId).employees.push(emp);
+        }
+        saveState();
+        closeModal("modal-emp");
+        renderEquipes();
+      }
+
+      function deleteEmployee(shopId, empId) {
+        const shop = state.shops.find((s) => s.id === shopId);
+        shop.employees = shop.employees.filter((e) => e.id !== empId);
+        state.conges = state.conges.filter((c) => c.empId !== empId);
+        saveState();
+        renderEquipes();
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+      }
+
+      // ── Export / Import ────────────────────────────────────
+      function exportData() {
+        const json = JSON.stringify(state, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "planning_boutiques.json";
+        a.click();
+      }
+
+      function importData() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".json";
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              state = JSON.parse(ev.target.result);
+              saveState();
+              renderPlanning();
+              alert("Import réussi !");
+            } catch {
+              alert("Fichier invalide.");
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+
+      // ── Close modal on bg click ────────────────────────────
+      document.querySelectorAll(".modal-bg").forEach((bg) => {
+        bg.addEventListener("click", (e) => {
+          if (e.target === bg) bg.classList.remove("open");
+        });
+      });
+
+      // ── Init ───────────────────────────────────────────────
+      renderPlanning();
+    </script>
+  </body>
+</html>
