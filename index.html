@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planning Boutiques</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -31,13 +31,11 @@
         --radius: 8px;
         --radius-lg: 12px;
       }
-
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
-
       body {
         font-family: "DM Sans", sans-serif;
         background: var(--bg);
@@ -58,21 +56,27 @@
         top: 0;
         z-index: 100;
       }
-
       .logo {
         font-size: 15px;
         font-weight: 600;
         letter-spacing: -0.02em;
-        color: var(--text);
       }
-
       .logo span {
         color: var(--accent);
       }
-
-      .header-nav {
+      .header-right {
         display: flex;
-        gap: 6px;
+        align-items: center;
+        gap: 10px;
+      }
+      .admin-badge {
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--accent-light);
+        color: var(--accent);
+        padding: 3px 10px;
+        border-radius: 20px;
+        display: none;
       }
 
       .btn {
@@ -84,14 +88,11 @@
         font-family: "DM Sans", sans-serif;
         font-size: 13px;
         cursor: pointer;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
+        transition: background 0.15s;
         font-weight: 500;
       }
       .btn:hover {
         background: var(--surface2);
-        border-color: var(--border2);
       }
       .btn.primary {
         background: var(--accent);
@@ -120,7 +121,6 @@
         padding: 2rem;
       }
 
-      /* Tabs */
       .tabs {
         display: flex;
         gap: 4px;
@@ -152,7 +152,6 @@
         color: var(--text);
       }
 
-      /* Panel */
       .panel {
         display: none;
       }
@@ -160,7 +159,6 @@
         display: block;
       }
 
-      /* Week nav */
       .week-nav {
         display: flex;
         align-items: center;
@@ -171,9 +169,6 @@
         border-radius: var(--radius-lg);
         padding: 10px 16px;
         width: fit-content;
-      }
-      .week-nav .btn {
-        padding: 4px 12px;
       }
       .week-info {
         font-size: 14px;
@@ -186,7 +181,6 @@
         margin-left: 6px;
       }
 
-      /* Planning table */
       .planning-table-wrap {
         overflow-x: auto;
       }
@@ -221,12 +215,10 @@
         text-align: left;
         font-weight: 500;
         font-size: 13px;
-        color: var(--text);
       }
       tr:last-child td {
         border-bottom: none;
       }
-
       .shop-row td {
         background: #f8f7f3;
         font-size: 11px;
@@ -234,8 +226,8 @@
         letter-spacing: 0.06em;
         color: var(--text2);
         padding: 5px 12px;
-        text-transform: uppercase;
         border-bottom: 1px solid var(--border);
+        text-transform: uppercase;
       }
 
       .badge {
@@ -264,7 +256,6 @@
         color: var(--indef-text);
       }
 
-      /* Legend */
       .legend {
         display: flex;
         gap: 16px;
@@ -284,7 +275,6 @@
         border-radius: 3px;
       }
 
-      /* Cards grid */
       .cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -341,7 +331,6 @@
         gap: 6px;
       }
 
-      /* Modal */
       .modal-bg {
         display: none;
         position: fixed;
@@ -369,6 +358,7 @@
         font-weight: 600;
         margin-bottom: 1.25rem;
       }
+
       .form-group {
         margin-bottom: 1rem;
       }
@@ -426,55 +416,47 @@
         color: var(--repos-text);
         border-color: #f5a0a0;
       }
-      .repos-day.alt-label {
-        font-size: 10px;
-        padding: 3px 8px;
+
+      .admin-only {
+        display: none;
+      }
+      body.is-admin .admin-only {
+        display: flex;
+      }
+      body.is-admin .admin-badge {
+        display: inline-block;
       }
 
-      .kevin-toggle {
-        display: flex;
-        gap: 8px;
-        margin-top: 6px;
-      }
-      .kevin-toggle label {
-        font-size: 12px;
-        color: var(--text2);
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        cursor: pointer;
-      }
-
-      .conge-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-top: 8px;
-      }
-      .conge-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 6px 10px;
-        background: var(--conge-bg);
-        border-radius: var(--radius);
-        font-size: 12px;
-        color: var(--conge-text);
-      }
-
-      .add-shop-area {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border);
-      }
-
-      .empty-state {
-        text-align: center;
+      .login-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
         padding: 2rem;
+        width: 360px;
+        max-width: 95vw;
+      }
+      .login-box h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 1.25rem;
+      }
+
+      .error-msg {
+        font-size: 12px;
+        color: var(--repos-text);
+        margin-top: 6px;
+        display: none;
+      }
+      .error-msg.show {
+        display: block;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
         color: var(--text3);
         font-size: 13px;
       }
-
       .section-title {
         font-size: 13px;
         font-weight: 600;
@@ -483,14 +465,22 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
       }
+      .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text3);
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
     <header>
       <div class="logo">Planning <span>Boutiques</span></div>
-      <div class="header-nav">
-        <button class="btn small" onclick="exportData()">Exporter</button>
-        <button class="btn small" onclick="importData()">Importer</button>
+      <div class="header-right">
+        <span class="admin-badge">Admin</span>
+        <button class="btn small" id="auth-btn" onclick="handleAuthClick()">
+          Connexion admin
+        </button>
       </div>
     </header>
 
@@ -499,8 +489,12 @@
         <button class="tab active" onclick="switchTab('planning')">
           Planning
         </button>
-        <button class="tab" onclick="switchTab('conges')">Congés</button>
-        <button class="tab" onclick="switchTab('equipes')">Équipes</button>
+        <button class="tab admin-only" onclick="switchTab('conges')">
+          Congés
+        </button>
+        <button class="tab admin-only" onclick="switchTab('equipes')">
+          Équipes
+        </button>
       </div>
 
       <!-- PLANNING -->
@@ -542,7 +536,7 @@
           </div>
         </div>
         <div class="planning-table-wrap">
-          <table id="planning-table">
+          <table>
             <thead>
               <tr>
                 <th class="name-th">Salarié</th>
@@ -554,12 +548,16 @@
                 <th>Sam</th>
               </tr>
             </thead>
-            <tbody id="planning-body"></tbody>
+            <tbody id="planning-body">
+              <tr>
+                <td colspan="7" class="loading">Chargement...</td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
 
-      <!-- CONGES -->
+      <!-- CONGES (admin only) -->
       <div class="panel" id="panel-conges">
         <div
           style="
@@ -579,7 +577,7 @@
         <div id="conges-list"></div>
       </div>
 
-      <!-- EQUIPES -->
+      <!-- EQUIPES (admin only) -->
       <div class="panel" id="panel-equipes">
         <div
           style="
@@ -592,13 +590,42 @@
           <div class="section-title" style="margin-bottom: 0">
             Boutiques & salariés
           </div>
-          <button class="btn primary" onclick="openShopModal()">
+          <button class="btn primary" onclick="openShopModal(null)">
             + Nouvelle boutique
           </button>
         </div>
         <div class="cards" id="equipes-cards"></div>
       </div>
     </main>
+
+    <!-- Modal Login -->
+    <div class="modal-bg" id="modal-login">
+      <div class="modal">
+        <h2>Connexion admin</h2>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="votre@email.com" />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input
+            type="password"
+            id="login-password"
+            placeholder="••••••••"
+            onkeydown="if (event.key === 'Enter') doLogin();"
+          />
+        </div>
+        <div class="error-msg" id="login-error">
+          Email ou mot de passe incorrect.
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal('modal-login')">
+            Annuler
+          </button>
+          <button class="btn primary" onclick="doLogin()">Se connecter</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal Congé -->
     <div class="modal-bg" id="modal-conge">
@@ -610,13 +637,7 @@
         </div>
         <div class="form-group">
           <label>Semaine</label>
-          <input
-            type="number"
-            id="conge-week"
-            min="1"
-            max="52"
-            placeholder="Ex: 16"
-          />
+          <input type="number" id="conge-week" min="1" max="52" />
         </div>
         <div class="form-group">
           <label>Année</label>
@@ -642,7 +663,7 @@
       <div class="modal">
         <h2 id="shop-modal-title">Nouvelle boutique</h2>
         <div class="form-group">
-          <label>Nom de la boutique</label>
+          <label>Nom</label>
           <input type="text" id="shop-name" placeholder="Ex: Saint-Leu" />
         </div>
         <div class="form-actions">
@@ -660,7 +681,7 @@
         <h2 id="emp-modal-title">Nouveau salarié</h2>
         <div class="form-group">
           <label>Prénom</label>
-          <input type="text" id="emp-name" placeholder="Ex: Marie" />
+          <input type="text" id="emp-name" />
         </div>
         <div class="form-group">
           <label>Boutique</label>
@@ -678,12 +699,12 @@
           </div>
         </div>
         <div class="form-group" id="alt-repos-group" style="display: none">
-          <label>Repos alterné (semaines paires / impaires)</label>
+          <label>Repos alterné (sem. paires / impaires)</label>
           <div
             style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px"
           >
             <select id="alt-even" style="flex: 1">
-              <option value="">Sem. paires — choisir</option>
+              <option value="">Sem. paires</option>
               <option value="0">Lundi</option>
               <option value="1">Mardi</option>
               <option value="2">Mercredi</option>
@@ -692,7 +713,7 @@
               <option value="5">Samedi</option>
             </select>
             <select id="alt-odd" style="flex: 1">
-              <option value="">Sem. impaires — choisir</option>
+              <option value="">Sem. impaires</option>
               <option value="0">Lundi</option>
               <option value="1">Mardi</option>
               <option value="2">Mercredi</option>
@@ -718,7 +739,7 @@
               id="repos-alt-check"
               onchange="toggleAltRepos()"
             />
-            Repos alterné (semaines paires/impaires)
+            Repos alterné semaines paires/impaires
           </label>
         </div>
         <div class="form-group">
@@ -749,8 +770,38 @@
       </div>
     </div>
 
-    <script>
-      const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        onSnapshot,
+        collection,
+        getDocs,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyC97pttIfC-wDJDIgKLxkkn0tlkqcu2ElY",
+        authDomain: "planning-boutiques.firebaseapp.com",
+        projectId: "planning-boutiques",
+        storageBucket: "planning-boutiques.firebasestorage.app",
+        messagingSenderId: "839686841910",
+        appId: "1:839686841910:web:da1f438c2d61bc23175a97",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const auth = getAuth(app);
+
       const DAY_NAMES = [
         "Lundi",
         "Mardi",
@@ -760,13 +811,43 @@
         "Samedi",
       ];
 
-      // ── État ──────────────────────────────────────────────
-      let state = loadState();
+      let state = { shops: [], conges: [] };
       let currentWeek = getISOWeek(new Date());
       let currentYear = new Date().getFullYear();
       let editingShopId = null;
       let editingEmpId = null;
       let editingEmpShopId = null;
+      let isAdmin = false;
+
+      // ── Firestore ──────────────────────────────────────────
+      const STATE_DOC = doc(db, "planning", "state");
+
+      async function loadFromFirestore() {
+        try {
+          const snap = await getDoc(STATE_DOC);
+          if (snap.exists()) {
+            state = snap.data();
+          } else {
+            state = defaultState();
+            await saveToFirestore();
+          }
+          renderAll();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function saveToFirestore() {
+        await setDoc(STATE_DOC, state);
+      }
+
+      // Écoute temps réel
+      onSnapshot(STATE_DOC, (snap) => {
+        if (snap.exists()) {
+          state = snap.data();
+          renderAll();
+        }
+      });
 
       function defaultState() {
         return {
@@ -873,18 +954,37 @@
         };
       }
 
-      function loadState() {
-        try {
-          const s = localStorage.getItem("planning_boutiques");
-          return s ? JSON.parse(s) : defaultState();
-        } catch (e) {
-          return defaultState();
-        }
-      }
+      // ── Auth ───────────────────────────────────────────────
+      onAuthStateChanged(auth, (user) => {
+        isAdmin = !!user;
+        document.body.classList.toggle("is-admin", isAdmin);
+        document.getElementById("auth-btn").textContent = isAdmin
+          ? "Déconnexion"
+          : "Connexion admin";
+        if (!isAdmin) switchTab("planning");
+      });
 
-      function saveState() {
-        localStorage.setItem("planning_boutiques", JSON.stringify(state));
-      }
+      window.handleAuthClick = () => {
+        if (isAdmin) {
+          signOut(auth);
+        } else {
+          document.getElementById("login-error").classList.remove("show");
+          document.getElementById("login-email").value = "";
+          document.getElementById("login-password").value = "";
+          document.getElementById("modal-login").classList.add("open");
+        }
+      };
+
+      window.doLogin = async () => {
+        const email = document.getElementById("login-email").value;
+        const pass = document.getElementById("login-password").value;
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+          closeModal("modal-login");
+        } catch (e) {
+          document.getElementById("login-error").classList.add("show");
+        }
+      };
 
       // ── Dates ──────────────────────────────────────────────
       function getISOWeek(date) {
@@ -909,7 +1009,7 @@
         return fmt(mon) + " – " + fmt(sat);
       }
 
-      function changeWeek(dir) {
+      window.changeWeek = (dir) => {
         currentWeek += dir;
         if (currentWeek > 52) {
           currentWeek = 1;
@@ -920,22 +1020,20 @@
           currentYear--;
         }
         renderPlanning();
-      }
+      };
 
-      function goToday() {
+      window.goToday = () => {
         currentWeek = getISOWeek(new Date());
         currentYear = new Date().getFullYear();
         renderPlanning();
-      }
+      };
 
-      // ── Tabs ──────────────────────────────────────────────
-      function switchTab(tab) {
-        document.querySelectorAll(".tab").forEach((t, i) => {
-          t.classList.toggle(
-            "active",
-            ["planning", "conges", "equipes"][i] === tab,
-          );
-        });
+      // ── Tabs ───────────────────────────────────────────────
+      window.switchTab = (tab) => {
+        const tabs = ["planning", "conges", "equipes"];
+        document
+          .querySelectorAll(".tab")
+          .forEach((t, i) => t.classList.toggle("active", tabs[i] === tab));
         document
           .querySelectorAll(".panel")
           .forEach((p) => p.classList.remove("active"));
@@ -943,20 +1041,26 @@
         if (tab === "planning") renderPlanning();
         if (tab === "conges") renderConges();
         if (tab === "equipes") renderEquipes();
+      };
+
+      function renderAll() {
+        const active = document.querySelector(".panel.active");
+        const id = active ? active.id.replace("panel-", "") : "planning";
+        if (id === "planning") renderPlanning();
+        if (id === "conges") renderConges();
+        if (id === "equipes") renderEquipes();
       }
 
-      // ── Planning ──────────────────────────────────────────
+      // ── Planning ───────────────────────────────────────────
       function isEnConge(empId, week, year) {
-        return state.conges.some(
+        return (state.conges || []).some(
           (c) => c.empId === empId && c.week === week && c.year === year,
         );
       }
 
       function getRepos(emp, week) {
         if (emp.indefini) return "indefini";
-        if (emp.alt) {
-          return week % 2 === 0 ? [emp.altEven] : [emp.altOdd];
-        }
+        if (emp.alt) return week % 2 === 0 ? [emp.altEven] : [emp.altOdd];
         return emp.repos || [];
       }
 
@@ -967,11 +1071,9 @@
           "<span>" +
           getWeekDates(currentWeek, currentYear) +
           "</span>";
-
         const tbody = document.getElementById("planning-body");
         tbody.innerHTML = "";
-
-        state.shops.forEach((shop, si) => {
+        (state.shops || []).forEach((shop, si) => {
           if (si > 0) {
             const sep = document.createElement("tr");
             sep.innerHTML =
@@ -982,15 +1084,13 @@
           hr.className = "shop-row";
           hr.innerHTML = '<td colspan="7">' + shop.name + "</td>";
           tbody.appendChild(hr);
-
-          if (!shop.employees.length) {
-            const empty = document.createElement("tr");
-            empty.innerHTML =
+          if (!shop.employees || !shop.employees.length) {
+            const e = document.createElement("tr");
+            e.innerHTML =
               '<td colspan="7" class="empty-state">Aucun salarié</td>';
-            tbody.appendChild(empty);
+            tbody.appendChild(e);
             return;
           }
-
           shop.employees.forEach((emp) => {
             const conge = isEnConge(emp.id, currentWeek, currentYear);
             const repos = getRepos(emp, currentWeek);
@@ -1011,10 +1111,10 @@
         });
       }
 
-      // ── Congés ────────────────────────────────────────────
+      // ── Congés ─────────────────────────────────────────────
       function renderConges() {
         const el = document.getElementById("conges-list");
-        if (!state.conges.length) {
+        if (!state.conges || !state.conges.length) {
           el.innerHTML =
             '<div class="empty-state">Aucun congé enregistré.</div>';
           return;
@@ -1023,22 +1123,15 @@
           (a, b) => a.year - b.year || a.week - b.week,
         );
         el.innerHTML = "";
-
-        // Group by employee
         const grouped = {};
         sorted.forEach((c) => {
           const emp = findEmp(c.empId);
-          const key = c.empId;
-          if (!grouped[key])
-            grouped[key] = { name: emp ? emp.name : c.empId, items: [] };
-          grouped[key].items.push(c);
+          if (!grouped[c.empId])
+            grouped[c.empId] = { name: emp ? emp.name : c.empId, items: [] };
+          grouped[c.empId].items.push(c);
         });
-
         const wrap = document.createElement("div");
-        wrap.style.display = "flex";
-        wrap.style.flexDirection = "column";
-        wrap.style.gap = "12px";
-
+        wrap.style.cssText = "display:flex;flex-direction:column;gap:12px;";
         Object.values(grouped).forEach((g) => {
           const card = document.createElement("div");
           card.className = "card";
@@ -1072,17 +1165,17 @@
       }
 
       function findEmp(empId) {
-        for (const shop of state.shops) {
+        for (const shop of state.shops || []) {
           const e = shop.employees.find((e) => e.id === empId);
           if (e) return e;
         }
         return null;
       }
 
-      function openCongeModal() {
+      window.openCongeModal = () => {
         const sel = document.getElementById("conge-emp");
         sel.innerHTML = "";
-        state.shops.forEach((shop) => {
+        (state.shops || []).forEach((shop) => {
           shop.employees.forEach((emp) => {
             const opt = document.createElement("option");
             opt.value = emp.id;
@@ -1093,43 +1186,43 @@
         document.getElementById("conge-week").value = currentWeek;
         document.getElementById("conge-year").value = currentYear;
         document.getElementById("modal-conge").classList.add("open");
-      }
+      };
 
-      function saveConge() {
+      window.saveConge = async () => {
         const empId = document.getElementById("conge-emp").value;
         const week = parseInt(document.getElementById("conge-week").value);
         const year = parseInt(document.getElementById("conge-year").value);
         if (!empId || isNaN(week) || isNaN(year)) return;
-        const exists = state.conges.some(
-          (c) => c.empId === empId && c.week === week && c.year === year,
-        );
-        if (!exists) state.conges.push({ empId, week, year });
-        saveState();
+        if (
+          !(state.conges || []).some(
+            (c) => c.empId === empId && c.week === week && c.year === year,
+          )
+        ) {
+          state.conges = [...(state.conges || []), { empId, week, year }];
+          await saveToFirestore();
+        }
         closeModal("modal-conge");
-        renderConges();
-      }
+      };
 
-      function deleteConge(empId, week, year) {
-        state.conges = state.conges.filter(
+      window.deleteConge = async (empId, week, year) => {
+        state.conges = (state.conges || []).filter(
           (c) => !(c.empId === empId && c.week === week && c.year === year),
         );
-        saveState();
-        renderConges();
-      }
+        await saveToFirestore();
+      };
 
-      // ── Équipes ───────────────────────────────────────────
+      // ── Équipes ────────────────────────────────────────────
       function renderEquipes() {
         const el = document.getElementById("equipes-cards");
         el.innerHTML = "";
-        state.shops.forEach((shop) => {
+        (state.shops || []).forEach((shop) => {
           const card = document.createElement("div");
           card.className = "card";
           const header = document.createElement("div");
           header.className = "card-header";
           header.innerHTML = "<h3>" + shop.name + "</h3>";
           const acts = document.createElement("div");
-          acts.style.display = "flex";
-          acts.style.gap = "6px";
+          acts.style.cssText = "display:flex;gap:6px;";
           const btnAdd = document.createElement("button");
           btnAdd.className = "btn small";
           btnAdd.textContent = "+ Salarié";
@@ -1142,16 +1235,13 @@
           acts.appendChild(btnDel);
           header.appendChild(acts);
           card.appendChild(header);
-
           const body = document.createElement("div");
           body.className = "card-body";
-          if (!shop.employees.length) {
+          if (!shop.employees || !shop.employees.length) {
             body.innerHTML =
               '<div style="font-size:12px;color:var(--text3);text-align:center;padding:1rem">Aucun salarié</div>';
           }
-          shop.employees.forEach((emp) => {
-            const row = document.createElement("div");
-            row.className = "employee-row";
+          (shop.employees || []).forEach((emp) => {
             let reposLabel = "";
             if (emp.indefini) reposLabel = "Repos indéfini";
             else if (emp.alt)
@@ -1164,7 +1254,8 @@
               reposLabel =
                 "Repos : " + emp.repos.map((d) => DAY_NAMES[d]).join(", ");
             else reposLabel = "Pas de repos défini";
-
+            const row = document.createElement("div");
+            row.className = "employee-row";
             row.innerHTML =
               '<div class="employee-info"><div class="employee-name">' +
               emp.name +
@@ -1191,53 +1282,50 @@
         });
       }
 
-      function openShopModal(id) {
-        editingShopId = id || null;
+      window.openShopModal = (id) => {
+        editingShopId = id;
         document.getElementById("shop-modal-title").textContent = id
           ? "Modifier la boutique"
           : "Nouvelle boutique";
         document.getElementById("shop-name").value = id
-          ? state.shops.find((s) => s.id === id).name
+          ? (state.shops.find((s) => s.id === id) || {}).name || ""
           : "";
         document.getElementById("modal-shop").classList.add("open");
-      }
+      };
 
-      function saveShop() {
+      window.saveShop = async () => {
         const name = document.getElementById("shop-name").value.trim();
         if (!name) return;
         if (editingShopId) {
           state.shops.find((s) => s.id === editingShopId).name = name;
         } else {
-          state.shops.push({ id: "shop_" + Date.now(), name, employees: [] });
+          state.shops = [
+            ...(state.shops || []),
+            { id: "shop_" + Date.now(), name, employees: [] },
+          ];
         }
-        saveState();
+        await saveToFirestore();
         closeModal("modal-shop");
-        renderEquipes();
-      }
+      };
 
-      function deleteShop(id) {
+      window.deleteShop = async (id) => {
         if (!confirm("Supprimer cette boutique et tous ses salariés ?")) return;
         state.shops = state.shops.filter((s) => s.id !== id);
-        saveState();
-        renderEquipes();
-      }
+        await saveToFirestore();
+      };
 
-      function openEmpModal(shopId, empId) {
+      window.openEmpModal = (shopId, empId) => {
         editingEmpShopId = shopId;
         editingEmpId = empId;
-
-        // Populate shop selector
         const sel = document.getElementById("emp-shop");
         sel.innerHTML = "";
-        state.shops.forEach((s) => {
+        (state.shops || []).forEach((s) => {
           const opt = document.createElement("option");
           opt.value = s.id;
           opt.textContent = s.name;
           if (s.id === shopId) opt.selected = true;
           sel.appendChild(opt);
         });
-
-        // Reset form
         document.getElementById("emp-modal-title").textContent = empId
           ? "Modifier le salarié"
           : "Nouveau salarié";
@@ -1248,7 +1336,6 @@
         document
           .querySelectorAll(".repos-day")
           .forEach((d) => d.classList.remove("selected"));
-
         if (empId) {
           const shop = state.shops.find((s) => s.id === shopId);
           const emp = shop.employees.find((e) => e.id === empId);
@@ -1256,7 +1343,6 @@
           if (emp.indefini) {
             document.getElementById("repos-indef-check").checked = true;
             document.getElementById("repos-selector").style.display = "none";
-            document.getElementById("alt-repos-group").style.display = "none";
           } else if (emp.alt) {
             document.getElementById("repos-alt-check").checked = true;
             document.getElementById("alt-repos-group").style.display = "block";
@@ -1264,20 +1350,19 @@
             document.getElementById("alt-even").value = emp.altEven;
             document.getElementById("alt-odd").value = emp.altOdd;
           } else {
-            (emp.repos || []).forEach((d) => {
+            (emp.repos || []).forEach((d) =>
               document
                 .querySelector('.repos-day[data-day="' + d + '"]')
-                .classList.add("selected");
-            });
+                .classList.add("selected"),
+            );
           }
         } else {
           document.getElementById("emp-name").value = "";
         }
-
         document.getElementById("modal-emp").classList.add("open");
-      }
+      };
 
-      function toggleAltRepos() {
+      window.toggleAltRepos = () => {
         const alt = document.getElementById("repos-alt-check").checked;
         if (alt) document.getElementById("repos-indef-check").checked = false;
         document.getElementById("alt-repos-group").style.display = alt
@@ -1286,44 +1371,36 @@
         document.getElementById("repos-selector").style.display = alt
           ? "none"
           : "flex";
-      }
+      };
 
-      function toggleIndefinit() {
+      window.toggleIndefinit = () => {
         const indef = document.getElementById("repos-indef-check").checked;
         if (indef) document.getElementById("repos-alt-check").checked = false;
         document.getElementById("alt-repos-group").style.display = "none";
         document.getElementById("repos-selector").style.display = indef
           ? "none"
           : "flex";
-      }
+      };
 
       document.querySelectorAll(".repos-day").forEach((el) => {
         el.onclick = () => el.classList.toggle("selected");
       });
 
-      function saveEmployee() {
+      window.saveEmployee = async () => {
         const name = document.getElementById("emp-name").value.trim();
         const targetShopId = document.getElementById("emp-shop").value;
         const alt = document.getElementById("repos-alt-check").checked;
         const indefini = document.getElementById("repos-indef-check").checked;
         if (!name) return;
-
         const repos = Array.from(
           document.querySelectorAll(".repos-day.selected"),
         ).map((d) => parseInt(d.dataset.day));
         const altEven = parseInt(document.getElementById("alt-even").value);
         const altOdd = parseInt(document.getElementById("alt-odd").value);
-
         if (editingEmpId) {
           const shop = state.shops.find((s) => s.id === editingEmpShopId);
           const emp = shop.employees.find((e) => e.id === editingEmpId);
-          emp.name = name;
-          emp.repos = repos;
-          emp.alt = alt;
-          emp.altEven = altEven;
-          emp.altOdd = altOdd;
-          emp.indefini = indefini;
-          // Move to different shop if changed
+          Object.assign(emp, { name, repos, alt, altEven, altOdd, indefini });
           if (targetShopId !== editingEmpShopId) {
             shop.employees = shop.employees.filter(
               (e) => e.id !== editingEmpId,
@@ -1342,64 +1419,28 @@
           };
           state.shops.find((s) => s.id === targetShopId).employees.push(emp);
         }
-        saveState();
+        await saveToFirestore();
         closeModal("modal-emp");
-        renderEquipes();
-      }
+      };
 
-      function deleteEmployee(shopId, empId) {
+      window.deleteEmployee = async (shopId, empId) => {
         const shop = state.shops.find((s) => s.id === shopId);
         shop.employees = shop.employees.filter((e) => e.id !== empId);
-        state.conges = state.conges.filter((c) => c.empId !== empId);
-        saveState();
-        renderEquipes();
-      }
+        state.conges = (state.conges || []).filter((c) => c.empId !== empId);
+        await saveToFirestore();
+      };
 
-      function closeModal(id) {
+      window.closeModal = (id) =>
         document.getElementById(id).classList.remove("open");
-      }
 
-      // ── Export / Import ────────────────────────────────────
-      function exportData() {
-        const json = JSON.stringify(state, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "planning_boutiques.json";
-        a.click();
-      }
-
-      function importData() {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".json";
-        input.onchange = (e) => {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            try {
-              state = JSON.parse(ev.target.result);
-              saveState();
-              renderPlanning();
-              alert("Import réussi !");
-            } catch {
-              alert("Fichier invalide.");
-            }
-          };
-          reader.readAsText(file);
-        };
-        input.click();
-      }
-
-      // ── Close modal on bg click ────────────────────────────
       document.querySelectorAll(".modal-bg").forEach((bg) => {
         bg.addEventListener("click", (e) => {
           if (e.target === bg) bg.classList.remove("open");
         });
       });
 
-      // ── Init ───────────────────────────────────────────────
-      renderPlanning();
+      // Init
+      loadFromFirestore();
     </script>
   </body>
 </html>
