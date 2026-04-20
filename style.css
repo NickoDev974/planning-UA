@@ -570,26 +570,26 @@ body.is-admin .admin-badge {
 
 /* Présent = vert */
 .cell-select.present {
-  background: #e8f5ec;
-  color: #1e6b35;
+  background-color: #e8f5ec !important;
+  color: #1e6b35 !important;
 }
 
 /* Repos = bleu */
 .cell-select.repos {
-  background: #e6f0ff;
-  color: #2a5bd7;
+  background-color: #e6f0ff !important;
+  color: #2a5bd7 !important;
 }
 
 /* Congé = rose */
 .cell-select.conge {
-  background: #ffeaf1;
-  color: #c2185b;
+  background-color: #ffeaf1 !important;
+  color: #c2185b !important;
 }
 
 /* Absent = rouge */
 .cell-select.absent {
-  background: #fdecea;
-  color: #b93535;
+  background-color: #fdecea !important;
+  color: #b93535 !important;
 }
 /* heures sup buton */
 .hsup-badge {
