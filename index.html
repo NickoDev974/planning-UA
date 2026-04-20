@@ -25,6 +25,9 @@
         <button class="tab admin-only" onclick="switchTab('conges')">
           Congés
         </button>
+        <button class="tab admin-only" onclick="switchTab('resume')">
+          Résumé mensuel
+        </button>
         <button class="tab admin-only" onclick="switchTab('equipes')">
           Équipes
         </button>
@@ -71,14 +74,14 @@
         <div class="planning-table-wrap">
           <table>
             <thead>
-              <tr>
+              <tr id="planning-thead-row">
                 <th class="name-th">Salarié</th>
-                <th>Lun</th>
-                <th>Mar</th>
-                <th>Mer</th>
-                <th>Jeu</th>
-                <th>Ven</th>
-                <th>Sam</th>
+                <th>Lundi</th>
+                <th>Mardi</th>
+                <th>Mercredi</th>
+                <th>Jeudi</th>
+                <th>Vendredi</th>
+                <th>Samedi</th>
               </tr>
             </thead>
             <tbody id="planning-body">
@@ -108,6 +111,33 @@
           </button>
         </div>
         <div id="conges-list"></div>
+      </div>
+
+      <!-- RÉSUMÉ MENSUEL -->
+      <div class="panel" id="panel-resume">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 10px;
+          "
+        >
+          <div class="section-title" style="margin-bottom: 0">
+            Résumé mensuel
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button class="btn" onclick="changeMonth(-1)">&#8592;</button>
+            <div class="week-info" id="month-info"></div>
+            <button class="btn" onclick="changeMonth(1)">&#8594;</button>
+            <button class="btn small" onclick="goCurrentMonth()">
+              Mois actuel
+            </button>
+          </div>
+        </div>
+        <div id="resume-content"></div>
       </div>
 
       <!-- ÉQUIPES -->
@@ -187,6 +217,42 @@
             Annuler
           </button>
           <button class="btn primary" onclick="saveConge()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Heures Sup -->
+    <div class="modal-bg" id="modal-hsup">
+      <div class="modal">
+        <h2>Heures supplémentaires</h2>
+        <div
+          id="hsup-emp-name"
+          style="font-size: 13px; color: var(--text2); margin-bottom: 1rem"
+        ></div>
+        <div class="form-group">
+          <label>Nombre d'heures</label>
+          <input
+            type="number"
+            id="hsup-hours"
+            min="0"
+            max="24"
+            step="0.5"
+            placeholder="Ex: 2.5"
+          />
+        </div>
+        <div class="form-group">
+          <label>Note (optionnel)</label>
+          <input
+            type="text"
+            id="hsup-note"
+            placeholder="Ex: remplacement, inventaire..."
+          />
+        </div>
+        <div class="form-actions">
+          <button class="btn" onclick="closeModal('modal-hsup')">
+            Annuler
+          </button>
+          <button class="btn primary" onclick="saveHsup()">Enregistrer</button>
         </div>
       </div>
     </div>
@@ -303,7 +369,6 @@
       </div>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
       import {
@@ -333,6 +398,7 @@
       const db = getFirestore(app);
       const auth = getAuth(app);
 
+      const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
       const DAY_NAMES = [
         "Lundi",
         "Mardi",
@@ -341,13 +407,30 @@
         "Vendredi",
         "Samedi",
       ];
+      const MONTH_NAMES = [
+        "Janvier",
+        "Février",
+        "Mars",
+        "Avril",
+        "Mai",
+        "Juin",
+        "Juillet",
+        "Août",
+        "Septembre",
+        "Octobre",
+        "Novembre",
+        "Décembre",
+      ];
 
-      let state = { shops: [], conges: [] };
+      let state = { shops: [], conges: [], overrides: [], hsup: [] };
       let currentWeek = getISOWeek(new Date());
       let currentYear = new Date().getFullYear();
+      let resumeMonth = new Date().getMonth();
+      let resumeYear = new Date().getFullYear();
       let editingShopId = null;
       let editingEmpId = null;
       let editingEmpShopId = null;
+      let hsupTarget = null; // { empId, date }
       let isAdmin = false;
 
       const STATE_DOC = doc(db, "planning", "state");
@@ -357,6 +440,8 @@
         const snap = await getDoc(STATE_DOC);
         if (snap.exists()) {
           state = snap.data();
+          if (!state.overrides) state.overrides = [];
+          if (!state.hsup) state.hsup = [];
         } else {
           state = defaultState();
           await saveToFirestore();
@@ -371,6 +456,8 @@
       onSnapshot(STATE_DOC, (snap) => {
         if (snap.exists()) {
           state = snap.data();
+          if (!state.overrides) state.overrides = [];
+          if (!state.hsup) state.hsup = [];
           renderAll();
         }
       });
@@ -477,6 +564,8 @@
             },
           ],
           conges: [{ empId: "corentin", week: 16, year: 2026 }],
+          overrides: [],
+          hsup: [],
         };
       }
 
@@ -523,16 +612,53 @@
         return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
       }
 
-      function getWeekDates(week, year) {
+      // Lundi de la semaine ISO
+      function getMondayOfWeek(week, year) {
         const jan4 = new Date(year, 0, 4);
         const s = new Date(jan4);
         s.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
         const mon = new Date(s);
         mon.setDate(s.getDate() + (week - 1) * 7);
+        return mon;
+      }
+
+      function getWeekDates(week, year) {
+        const mon = getMondayOfWeek(week, year);
         const sat = new Date(mon);
         sat.setDate(mon.getDate() + 5);
         const fmt = (d) => d.getDate() + "/" + (d.getMonth() + 1);
         return fmt(mon) + " – " + fmt(sat);
+      }
+
+      // Retourne les 6 dates (lun–sam) de la semaine courante
+      function getWeekDayDates(week, year) {
+        const mon = getMondayOfWeek(week, year);
+        return Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(mon);
+          d.setDate(mon.getDate() + i);
+          return d;
+        });
+      }
+
+      // Clé de date pour hsup : "YYYY-MM-DD"
+      function dateKey(date) {
+        return (
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0")
+        );
+      }
+
+      function getWorkDaysOfMonth(month, year) {
+        const days = [];
+        const d = new Date(year, month, 1);
+        while (d.getMonth() === month) {
+          if (d.getDay() !== 0) days.push(new Date(d));
+          d.setDate(d.getDate() + 1);
+        }
+        return days;
       }
 
       window.changeWeek = (dir) => {
@@ -554,9 +680,28 @@
         renderPlanning();
       };
 
+      window.changeMonth = (dir) => {
+        resumeMonth += dir;
+        if (resumeMonth > 11) {
+          resumeMonth = 0;
+          resumeYear++;
+        }
+        if (resumeMonth < 0) {
+          resumeMonth = 11;
+          resumeYear--;
+        }
+        renderResume();
+      };
+
+      window.goCurrentMonth = () => {
+        resumeMonth = new Date().getMonth();
+        resumeYear = new Date().getFullYear();
+        renderResume();
+      };
+
       // ── Tabs ───────────────────────────────────────────────
       window.switchTab = (tab) => {
-        const tabs = ["planning", "conges", "equipes"];
+        const tabs = ["planning", "conges", "resume", "equipes"];
         document
           .querySelectorAll(".tab")
           .forEach((t, i) => t.classList.toggle("active", tabs[i] === tab));
@@ -566,6 +711,7 @@
         document.getElementById("panel-" + tab).classList.add("active");
         if (tab === "planning") renderPlanning();
         if (tab === "conges") renderConges();
+        if (tab === "resume") renderResume();
         if (tab === "equipes") renderEquipes();
       };
 
@@ -574,6 +720,7 @@
         const id = active ? active.id.replace("panel-", "") : "planning";
         if (id === "planning") renderPlanning();
         if (id === "conges") renderConges();
+        if (id === "resume") renderResume();
         if (id === "equipes") renderEquipes();
       }
 
@@ -590,15 +737,68 @@
         return emp.repos || [];
       }
 
+      function getWeeklyOverride(empId, week, year) {
+        if (!state.overrides) return null;
+        return state.overrides.find(
+          (o) => o.empId === empId && o.week === week && o.year === year,
+        );
+      }
+
+      function getDayStatus(emp, date) {
+        const week = getISOWeek(date);
+        const year = date.getFullYear();
+        const dow = date.getDay();
+        const dayIdx = dow === 0 ? 6 : dow - 1;
+        const override = getWeeklyOverride(emp.id, week, year);
+        if (override && override.days && override.days[dayIdx] !== undefined)
+          return override.days[dayIdx];
+        if (isEnConge(emp.id, week, year)) return "conge";
+        const repos = getRepos(emp, week);
+        if (repos === "indefini") return "indef";
+        if (repos.includes(dayIdx)) return "repos";
+        return "present";
+      }
+
+      function getHsupForDay(empId, date) {
+        const key = dateKey(date);
+        return (
+          (state.hsup || []).find((h) => h.empId === empId && h.date === key) ||
+          null
+        );
+      }
+
+      function labelBadge(status) {
+        return (
+          {
+            present: "P",
+            repos: "Repos",
+            conge: "Congé",
+            absent: "Absent",
+            indef: "?",
+          }[status] || status
+        );
+      }
+
       function renderPlanning() {
+        const weekDates = getWeekDayDates(currentWeek, currentYear);
+
+        // Mise à jour de l'en-tête avec les dates
+        const thead = document.getElementById("planning-thead-row");
+        thead.innerHTML = '<th class="name-th">Salarié</th>';
+        weekDates.forEach((date, i) => {
+          thead.innerHTML += `<th>${DAY_SHORT[i]}<br><span style="font-size:11px;font-weight:400;color:var(--text3)">${date.getDate()}/${date.getMonth() + 1}</span></th>`;
+        });
+
         document.getElementById("week-info").innerHTML =
           "Semaine " +
           currentWeek +
           "<span>" +
           getWeekDates(currentWeek, currentYear) +
           "</span>";
+
         const tbody = document.getElementById("planning-body");
         tbody.innerHTML = "";
+
         (state.shops || []).forEach((shop, si) => {
           if (si > 0) {
             const sep = document.createElement("tr");
@@ -610,6 +810,7 @@
           hr.className = "shop-row";
           hr.innerHTML = '<td colspan="7">' + shop.name + "</td>";
           tbody.appendChild(hr);
+
           if (!shop.employees || !shop.employees.length) {
             const e = document.createElement("tr");
             e.innerHTML =
@@ -617,23 +818,230 @@
             tbody.appendChild(e);
             return;
           }
+
           shop.employees.forEach((emp) => {
             const conge = isEnConge(emp.id, currentWeek, currentYear);
+            const override = getWeeklyOverride(
+              emp.id,
+              currentWeek,
+              currentYear,
+            );
             const repos = getRepos(emp, currentWeek);
             const tr = document.createElement("tr");
             let html = '<td class="name-cell">' + emp.name + "</td>";
-            for (let d = 0; d < 6; d++) {
-              if (conge)
-                html += '<td><span class="badge conge">Congé</span></td>';
-              else if (repos === "indefini")
-                html += '<td><span class="badge indef">?</span></td>';
-              else if (repos.includes(d))
-                html += '<td><span class="badge repos">Repos</span></td>';
-              else html += '<td><span class="badge present">P</span></td>';
-            }
+
+            weekDates.forEach((date, d) => {
+              let status;
+              if (override && override.days && override.days[d] !== undefined) {
+                status = override.days[d];
+              } else if (conge) {
+                status = "conge";
+              } else if (repos === "indefini") {
+                status = "indef";
+              } else if (repos.includes(d)) {
+                status = "repos";
+              } else {
+                status = "present";
+              }
+
+              const hsup = getHsupForDay(emp.id, date);
+              const hsupBadge = hsup
+                ? `<span class="hsup-badge" title="${hsup.note || ""}">+${hsup.hours}h</span>`
+                : "";
+              const hsupBtn = isAdmin
+                ? `<button class="btn-hsup" onclick="openHsupModal('${emp.id}','${emp.name}','${dateKey(date)}')" title="Heures sup">＋</button>`
+                : "";
+
+              if (isAdmin) {
+                html += `<td>
+                  <select class="cell-select ${status}" onchange="updateDay('${emp.id}',${d},this.value)">
+                    <option value="present" ${status === "present" ? "selected" : ""}>Présent</option>
+                    <option value="repos"   ${status === "repos" ? "selected" : ""}>Repos</option>
+                    <option value="absent"  ${status === "absent" ? "selected" : ""}>Absent</option>
+                    <option value="conge"   ${status === "conge" ? "selected" : ""}>Congé</option>
+                  </select>
+                  <div class="cell-bottom">${hsupBadge}${hsupBtn}</div>
+                </td>`;
+              } else {
+                html += `<td>
+                  <span class="badge ${status}">${labelBadge(status)}</span>
+                  <div class="cell-bottom">${hsupBadge}</div>
+                </td>`;
+              }
+            });
+
             tr.innerHTML = html;
             tbody.appendChild(tr);
           });
+        });
+      }
+
+      // ── Heures supplémentaires ─────────────────────────────
+      window.openHsupModal = (empId, empName, dateStr) => {
+        hsupTarget = { empId, dateStr };
+        const existing = (state.hsup || []).find(
+          (h) => h.empId === empId && h.date === dateStr,
+        );
+        document.getElementById("hsup-emp-name").textContent =
+          empName + " — " + dateStr.split("-").reverse().join("/");
+        document.getElementById("hsup-hours").value = existing
+          ? existing.hours
+          : "";
+        document.getElementById("hsup-note").value = existing
+          ? existing.note
+          : "";
+        document.getElementById("modal-hsup").classList.add("open");
+      };
+
+      window.saveHsup = async () => {
+        if (!hsupTarget) return;
+        const hours = parseFloat(document.getElementById("hsup-hours").value);
+        const note = document.getElementById("hsup-note").value.trim();
+        if (isNaN(hours) || hours <= 0) return;
+        if (!state.hsup) state.hsup = [];
+        // Supprimer l'existant si présent
+        state.hsup = state.hsup.filter(
+          (h) =>
+            !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
+        );
+        state.hsup.push({
+          empId: hsupTarget.empId,
+          date: hsupTarget.dateStr,
+          hours,
+          note,
+        });
+        await saveToFirestore();
+        closeModal("modal-hsup");
+      };
+
+      window.deleteHsup = async (empId, dateStr) => {
+        state.hsup = (state.hsup || []).filter(
+          (h) => !(h.empId === empId && h.date === dateStr),
+        );
+        await saveToFirestore();
+      };
+
+      // ── Résumé mensuel ─────────────────────────────────────
+      function renderResume() {
+        document.getElementById("month-info").textContent =
+          MONTH_NAMES[resumeMonth] + " " + resumeYear;
+
+        const workDays = getWorkDaysOfMonth(resumeMonth, resumeYear);
+        const el = document.getElementById("resume-content");
+        el.innerHTML = "";
+
+        (state.shops || []).forEach((shop) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.style.marginBottom = "1rem";
+
+          const header = document.createElement("div");
+          header.className = "card-header";
+          header.innerHTML = "<h3>" + shop.name + "</h3>";
+          card.appendChild(header);
+
+          if (!shop.employees || !shop.employees.length) {
+            const body = document.createElement("div");
+            body.className = "card-body";
+            body.innerHTML = '<div class="empty-state">Aucun salarié</div>';
+            card.appendChild(body);
+            el.appendChild(card);
+            return;
+          }
+
+          const table = document.createElement("table");
+          table.style.cssText =
+            "width:100%;border-collapse:collapse;font-size:13px;";
+
+          const thStyle =
+            "padding:8px 12px;background:var(--surface2);font-size:12px;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);text-align:center;";
+          table.innerHTML = `<thead><tr>
+            <th style="${thStyle}text-align:left;width:120px">Salarié</th>
+            <th style="${thStyle}">Jours travaillés</th>
+            <th style="${thStyle}">Jours de congé</th>
+            <th style="${thStyle}">Absences</th>
+            <th style="${thStyle}">Jours de repos</th>
+            <th style="${thStyle}">Heures sup</th>
+            <th style="${thStyle}">Semaines de congé</th>
+          </tr></thead>`;
+
+          const tbody = document.createElement("tbody");
+
+          shop.employees.forEach((emp, i) => {
+            let joursPresent = 0,
+              joursConge = 0,
+              joursAbsent = 0,
+              joursRepos = 0;
+            let totalHsup = 0;
+            const congeWeeks = new Set();
+            const hsupDetails = [];
+
+            workDays.forEach((date) => {
+              const status = getDayStatus(emp, date);
+              if (status === "present") joursPresent++;
+              else if (status === "conge") {
+                joursConge++;
+                congeWeeks.add("S" + getISOWeek(date));
+              } else if (status === "absent") joursAbsent++;
+              else if (status === "repos") joursRepos++;
+
+              const hsup = getHsupForDay(emp.id, date);
+              if (hsup) {
+                totalHsup += hsup.hours;
+                hsupDetails.push({
+                  date: date.getDate() + "/" + (date.getMonth() + 1),
+                  hours: hsup.hours,
+                  note: hsup.note,
+                });
+              }
+            });
+
+            const congeDetail = congeWeeks.size
+              ? [...congeWeeks].join(", ")
+              : "—";
+            const hsupTooltip = hsupDetails.length
+              ? hsupDetails
+                  .map(
+                    (h) =>
+                      h.date +
+                      ": +" +
+                      h.hours +
+                      "h" +
+                      (h.note ? " (" + h.note + ")" : ""),
+                  )
+                  .join("\n")
+              : "";
+            const isLast = i === shop.employees.length - 1;
+
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = isLast
+              ? "none"
+              : "0.5px solid var(--border)";
+
+            const tdStyle = "padding:8px 12px;text-align:center;";
+            tr.innerHTML = `
+              <td style="padding:8px 12px;font-weight:500;color:var(--text)">${emp.name}</td>
+              <td style="${tdStyle}"><span style="background:var(--present-bg);color:var(--present-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursPresent}j</span></td>
+              <td style="${tdStyle}"><span style="background:var(--conge-bg);color:var(--conge-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursConge}j</span></td>
+              <td style="${tdStyle}">${
+                joursAbsent > 0
+                  ? `<span style="background:var(--repos-bg);color:var(--repos-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursAbsent}j</span>`
+                  : `<span style="color:var(--text3);font-size:12px">—</span>`
+              }</td>
+              <td style="${tdStyle}"><span style="background:var(--indef-bg);color:var(--indef-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursRepos}j</span></td>
+              <td style="${tdStyle}">${
+                totalHsup > 0
+                  ? `<span class="hsup-total" title="${hsupTooltip}">${totalHsup}h</span>`
+                  : `<span style="color:var(--text3);font-size:12px">—</span>`
+              }</td>
+              <td style="padding:8px 12px;text-align:center;font-size:11px;color:var(--text2)">${congeDetail}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          table.appendChild(tbody);
+          card.appendChild(table);
+          el.appendChild(card);
         });
       }
 
@@ -951,6 +1359,25 @@
         const shop = state.shops.find((s) => s.id === shopId);
         shop.employees = shop.employees.filter((e) => e.id !== empId);
         state.conges = (state.conges || []).filter((c) => c.empId !== empId);
+        state.hsup = (state.hsup || []).filter((h) => h.empId !== empId);
+        await saveToFirestore();
+      };
+
+      window.updateDay = async (empId, day, value) => {
+        if (!isAdmin) return;
+        if (!state.overrides) state.overrides = [];
+        let override = state.overrides.find(
+          (o) =>
+            o.empId === empId &&
+            o.week === currentWeek &&
+            o.year === currentYear,
+        );
+        if (!override) {
+          override = { empId, week: currentWeek, year: currentYear, days: {} };
+          state.overrides.push(override);
+        }
+        if (!override.days) override.days = {};
+        override.days[day] = value;
         await saveToFirestore();
       };
 
