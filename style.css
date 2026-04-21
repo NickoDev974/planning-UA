@@ -636,3 +636,8 @@ body.is-admin .admin-badge {
   font-weight: 600;
   cursor: help;
 }
+
+.cell-select:disabled {
+  opacity: 1;
+  cursor: default;
+}

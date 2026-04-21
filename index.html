@@ -768,7 +768,7 @@
       function labelBadge(status) {
         return (
           {
-            present: "P",
+            present: "Présent",
             repos: "Repos",
             conge: "Congé",
             absent: "Absent",
@@ -863,7 +863,9 @@
                 </td>`;
               } else {
                 html += `<td>
-                  <span class="badge ${status}">${labelBadge(status)}</span>
+                  <select class="cell-select ${status}" disabled>
+                    <option value="${status}" selected>${labelBadge(status)}</option>
+                  </select>
                   <div class="cell-bottom">${hsupBadge}</div>
                 </td>`;
               }
