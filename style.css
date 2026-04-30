@@ -17,6 +17,8 @@
   --repos-text: #b93535;
   --conge-bg: #fef3e2;
   --conge-text: #8a5a00;
+  --arret-bg: #f0ebff;
+  --arret-text: #5a3ca0;
   --indef-bg: #f0efe9;
   --indef-text: #7a7870;
   --radius: 8px;
@@ -590,6 +592,12 @@ body.is-admin .admin-badge {
 .cell-select.absent {
   background-color: #fdecea !important;
   color: #b93535 !important;
+}
+
+/* Arrêt de travail = violet */
+.cell-select.arret {
+  background-color: var(--arret-bg) !important;
+  color: var(--arret-text) !important;
 }
 /* heures sup buton */
 .hsup-badge {

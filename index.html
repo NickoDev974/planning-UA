@@ -66,6 +66,13 @@
           <div class="leg">
             <div
               class="leg-dot"
+              style="background: var(--arret-bg); border: 1px solid #b9addf"
+            ></div>
+            Arrêt de travail
+          </div>
+          <div class="leg">
+            <div
+              class="leg-dot"
               style="background: var(--indef-bg); border: 1px solid #ccc9bc"
             ></div>
             Indéfini
@@ -574,7 +581,8 @@
         document.getElementById("auth-btn").textContent = isAdmin
           ? "Déconnexion"
           : "Connexion admin";
-        if (!isAdmin) switchTab("planning");
+        if (isAdmin) renderAll();
+        else switchTab("planning");
       });
 
       window.handleAuthClick = () => {
@@ -594,6 +602,7 @@
         try {
           await signInWithEmailAndPassword(auth, email, pass);
           closeModal("modal-login");
+          window.location.reload();
         } catch (e) {
           document.getElementById("login-error").classList.add("show");
         }
@@ -772,6 +781,7 @@
             repos: "Repos",
             conge: "Congé",
             absent: "Absent",
+            arret: "Arrêt de travail",
             indef: "?",
           }[status] || status
         );
@@ -858,6 +868,7 @@
                     <option value="repos"   ${status === "repos" ? "selected" : ""}>Repos</option>
                     <option value="absent"  ${status === "absent" ? "selected" : ""}>Absent</option>
                     <option value="conge"   ${status === "conge" ? "selected" : ""}>Congé</option>
+                    <option value="arret"   ${status === "arret" ? "selected" : ""}>Arrêt de travail</option>
                   </select>
                   <div class="cell-bottom">${hsupBadge}${hsupBtn}</div>
                 </td>`;
@@ -973,6 +984,7 @@
             <th style="${thStyle}">Jours travaillés</th>
             <th style="${thStyle}">Jours de congé</th>
             <th style="${thStyle}">Absences</th>
+            <th style="${thStyle}">Arrêts de travail</th>
             <th style="${thStyle}">Jours de repos</th>
             <th style="${thStyle}">Heures sup</th>
             <th style="${thStyle}">Semaines de congé</th>
@@ -984,6 +996,7 @@
             let joursPresent = 0,
               joursConge = 0,
               joursAbsent = 0,
+              joursArret = 0,
               joursRepos = 0;
             let totalHsup = 0;
             const congeWeeks = new Set();
@@ -996,6 +1009,7 @@
                 joursConge++;
                 congeWeeks.add("S" + getISOWeek(date));
               } else if (status === "absent") joursAbsent++;
+              else if (status === "arret") joursArret++;
               else if (status === "repos") joursRepos++;
 
               const hsup = getHsupForDay(emp.id, date);
@@ -1039,6 +1053,11 @@
               <td style="${tdStyle}">${
                 joursAbsent > 0
                   ? `<span style="background:var(--repos-bg);color:var(--repos-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursAbsent}j</span>`
+                  : `<span style="color:var(--text3);font-size:12px">—</span>`
+              }</td>
+              <td style="${tdStyle}">${
+                joursArret > 0
+                  ? `<span style="background:var(--arret-bg);color:var(--arret-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursArret}j</span>`
                   : `<span style="color:var(--text3);font-size:12px">—</span>`
               }</td>
               <td style="${tdStyle}"><span style="background:var(--indef-bg);color:var(--indef-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursRepos}j</span></td>
