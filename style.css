@@ -52,7 +52,9 @@ header {
   top: 0;
   z-index: 100;
 }
-
+.img-logo {
+  font-size: 20px;
+}
 .logo {
   font-size: 15px;
   font-weight: 600;

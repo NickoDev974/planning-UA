@@ -1,0 +1,1048 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC97pttIfC-wDJDIgKLxkkn0tlkqcu2ElY",
+  authDomain: "planning-boutiques.firebaseapp.com",
+  projectId: "planning-boutiques",
+  storageBucket: "planning-boutiques.firebasestorage.app",
+  messagingSenderId: "839686841910",
+  appId: "1:839686841910:web:da1f438c2d61bc23175a97",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const DAY_NAMES = [
+  "Lundi",
+  "Mardi",
+  "Mercredi",
+  "Jeudi",
+  "Vendredi",
+  "Samedi",
+];
+const MONTH_NAMES = [
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre",
+];
+
+let state = { shops: [], conges: [], overrides: [], hsup: [] };
+let currentWeek = getISOWeek(new Date());
+let currentYear = new Date().getFullYear();
+let resumeMonth = new Date().getMonth();
+let resumeYear = new Date().getFullYear();
+let editingShopId = null;
+let editingEmpId = null;
+let editingEmpShopId = null;
+let hsupTarget = null; // { empId, date }
+let isAdmin = false;
+
+const STATE_DOC = doc(db, "planning", "state");
+
+// ── Firestore ──────────────────────────────────────────
+async function loadFromFirestore() {
+  const snap = await getDoc(STATE_DOC);
+  if (snap.exists()) {
+    state = snap.data();
+    if (!state.overrides) state.overrides = [];
+    if (!state.hsup) state.hsup = [];
+  } else {
+    state = defaultState();
+    await saveToFirestore();
+  }
+  renderAll();
+}
+
+async function saveToFirestore() {
+  await setDoc(STATE_DOC, state);
+}
+
+onSnapshot(STATE_DOC, (snap) => {
+  if (snap.exists()) {
+    state = snap.data();
+    if (!state.overrides) state.overrides = [];
+    if (!state.hsup) state.hsup = [];
+    renderAll();
+  }
+});
+
+function defaultState() {
+  return {
+    shops: [
+      {
+        id: "sp",
+        name: "Saint-Pierre",
+        employees: [
+          {
+            id: "nicolas",
+            name: "Nicolas",
+            repos: [0],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "gregory",
+            name: "Gregory",
+            repos: [2],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "corentin",
+            name: "Corentin",
+            repos: [4],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "kevin",
+            name: "Kevin",
+            repos: [],
+            alt: true,
+            altEven: 1,
+            altOdd: 3,
+            indefini: false,
+          },
+        ],
+      },
+      {
+        id: "spl",
+        name: "Saint-Paul",
+        employees: [
+          {
+            id: "luc",
+            name: "Luc",
+            repos: [1],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "matthias",
+            name: "Matthias",
+            repos: [3],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "dimitri",
+            name: "Dimitri",
+            repos: [2],
+            alt: false,
+            indefini: false,
+          },
+        ],
+      },
+      {
+        id: "sm",
+        name: "Sainte-Marie",
+        employees: [
+          {
+            id: "lisa",
+            name: "Lisa",
+            repos: [],
+            alt: false,
+            indefini: true,
+          },
+          {
+            id: "jerome",
+            name: "Jérôme",
+            repos: [0],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "xavier",
+            name: "Xavier",
+            repos: [2],
+            alt: false,
+            indefini: false,
+          },
+          {
+            id: "luca",
+            name: "Luca",
+            repos: [],
+            alt: false,
+            indefini: true,
+          },
+        ],
+      },
+    ],
+    conges: [{ empId: "corentin", week: 16, year: 2026 }],
+    overrides: [],
+    hsup: [],
+  };
+}
+
+// ── Auth ───────────────────────────────────────────────
+onAuthStateChanged(auth, (user) => {
+  isAdmin = !!user;
+  document.body.classList.toggle("is-admin", isAdmin);
+  document.getElementById("auth-btn").textContent = isAdmin
+    ? "Déconnexion"
+    : "Connexion admin";
+  if (isAdmin) renderAll();
+  else switchTab("planning");
+});
+
+window.handleAuthClick = () => {
+  if (isAdmin) {
+    signOut(auth);
+  } else {
+    document.getElementById("login-error").classList.remove("show");
+    document.getElementById("login-email").value = "";
+    document.getElementById("login-password").value = "";
+    document.getElementById("modal-login").classList.add("open");
+  }
+};
+
+window.doLogin = async () => {
+  const email = document.getElementById("login-email").value;
+  const pass = document.getElementById("login-password").value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    closeModal("modal-login");
+    window.location.reload();
+  } catch (e) {
+    document.getElementById("login-error").classList.add("show");
+  }
+};
+
+// ── Dates ──────────────────────────────────────────────
+function getISOWeek(date) {
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
+// Lundi de la semaine ISO
+function getMondayOfWeek(week, year) {
+  const jan4 = new Date(year, 0, 4);
+  const s = new Date(jan4);
+  s.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const mon = new Date(s);
+  mon.setDate(s.getDate() + (week - 1) * 7);
+  return mon;
+}
+
+function getWeekDates(week, year) {
+  const mon = getMondayOfWeek(week, year);
+  const sat = new Date(mon);
+  sat.setDate(mon.getDate() + 5);
+  const fmt = (d) => d.getDate() + "/" + (d.getMonth() + 1);
+  return fmt(mon) + " – " + fmt(sat);
+}
+
+// Retourne les 6 dates (lun–sam) de la semaine courante
+function getWeekDayDates(week, year) {
+  const mon = getMondayOfWeek(week, year);
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    return d;
+  });
+}
+
+// Clé de date pour hsup : "YYYY-MM-DD"
+function dateKey(date) {
+  return (
+    date.getFullYear() +
+    "-" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0")
+  );
+}
+
+function getWorkDaysOfMonth(month, year) {
+  const days = [];
+  const d = new Date(year, month, 1);
+  while (d.getMonth() === month) {
+    if (d.getDay() !== 0) days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+window.changeWeek = (dir) => {
+  currentWeek += dir;
+  if (currentWeek > 52) {
+    currentWeek = 1;
+    currentYear++;
+  }
+  if (currentWeek < 1) {
+    currentWeek = 52;
+    currentYear--;
+  }
+  renderPlanning();
+};
+
+window.goToday = () => {
+  currentWeek = getISOWeek(new Date());
+  currentYear = new Date().getFullYear();
+  renderPlanning();
+};
+
+window.changeMonth = (dir) => {
+  resumeMonth += dir;
+  if (resumeMonth > 11) {
+    resumeMonth = 0;
+    resumeYear++;
+  }
+  if (resumeMonth < 0) {
+    resumeMonth = 11;
+    resumeYear--;
+  }
+  renderResume();
+};
+
+window.goCurrentMonth = () => {
+  resumeMonth = new Date().getMonth();
+  resumeYear = new Date().getFullYear();
+  renderResume();
+};
+
+// ── Tabs ───────────────────────────────────────────────
+window.switchTab = (tab) => {
+  const tabs = ["planning", "conges", "resume", "equipes"];
+  document
+    .querySelectorAll(".tab")
+    .forEach((t, i) => t.classList.toggle("active", tabs[i] === tab));
+  document
+    .querySelectorAll(".panel")
+    .forEach((p) => p.classList.remove("active"));
+  document.getElementById("panel-" + tab).classList.add("active");
+  if (tab === "planning") renderPlanning();
+  if (tab === "conges") renderConges();
+  if (tab === "resume") renderResume();
+  if (tab === "equipes") renderEquipes();
+};
+
+function renderAll() {
+  const active = document.querySelector(".panel.active");
+  const id = active ? active.id.replace("panel-", "") : "planning";
+  if (id === "planning") renderPlanning();
+  if (id === "conges") renderConges();
+  if (id === "resume") renderResume();
+  if (id === "equipes") renderEquipes();
+}
+
+// ── Planning ───────────────────────────────────────────
+function isEnConge(empId, week, year) {
+  return (state.conges || []).some(
+    (c) => c.empId === empId && c.week === week && c.year === year,
+  );
+}
+
+function getRepos(emp, week) {
+  if (emp.indefini) return "indefini";
+  if (emp.alt) return week % 2 === 0 ? [emp.altEven] : [emp.altOdd];
+  return emp.repos || [];
+}
+
+function getWeeklyOverride(empId, week, year) {
+  if (!state.overrides) return null;
+  return state.overrides.find(
+    (o) => o.empId === empId && o.week === week && o.year === year,
+  );
+}
+
+function getDayStatus(emp, date) {
+  const week = getISOWeek(date);
+  const year = date.getFullYear();
+  const dow = date.getDay();
+  const dayIdx = dow === 0 ? 6 : dow - 1;
+  const override = getWeeklyOverride(emp.id, week, year);
+  if (override && override.days && override.days[dayIdx] !== undefined)
+    return override.days[dayIdx];
+  if (isEnConge(emp.id, week, year)) return "conge";
+  const repos = getRepos(emp, week);
+  if (repos === "indefini") return "indef";
+  if (repos.includes(dayIdx)) return "repos";
+  return "present";
+}
+
+function getHsupForDay(empId, date) {
+  const key = dateKey(date);
+  return (
+    (state.hsup || []).find((h) => h.empId === empId && h.date === key) ||
+    null
+  );
+}
+
+function labelBadge(status) {
+  return (
+    {
+      present: "Présent",
+      repos: "Repos",
+      conge: "Congé",
+      absent: "Absent",
+      arret: "Arrêt de travail",
+      indef: "?",
+    }[status] || status
+  );
+}
+
+function renderPlanning() {
+  const weekDates = getWeekDayDates(currentWeek, currentYear);
+
+  // Mise à jour de l'en-tête avec les dates
+  const thead = document.getElementById("planning-thead-row");
+  thead.innerHTML = '<th class="name-th">Salarié</th>';
+  weekDates.forEach((date, i) => {
+    thead.innerHTML += `<th>${DAY_SHORT[i]}<br><span style="font-size:11px;font-weight:400;color:var(--text3)">${date.getDate()}/${date.getMonth() + 1}</span></th>`;
+  });
+
+  document.getElementById("week-info").innerHTML =
+    "Semaine " +
+    currentWeek +
+    "<span>" +
+    getWeekDates(currentWeek, currentYear) +
+    "</span>";
+
+  const tbody = document.getElementById("planning-body");
+  tbody.innerHTML = "";
+
+  (state.shops || []).forEach((shop, si) => {
+    if (si > 0) {
+      const sep = document.createElement("tr");
+      sep.className = "shop-gap";
+      sep.innerHTML = '<td colspan="7"></td>';
+      tbody.appendChild(sep);
+    }
+    const hr = document.createElement("tr");
+    hr.className = "shop-row";
+    hr.innerHTML = '<td colspan="7">' + shop.name + "</td>";
+    tbody.appendChild(hr);
+
+    if (!shop.employees || !shop.employees.length) {
+      const e = document.createElement("tr");
+      e.innerHTML =
+        '<td colspan="7" class="empty-state">Aucun salarié</td>';
+      tbody.appendChild(e);
+      return;
+    }
+
+    shop.employees.forEach((emp) => {
+      const conge = isEnConge(emp.id, currentWeek, currentYear);
+      const override = getWeeklyOverride(
+        emp.id,
+        currentWeek,
+        currentYear,
+      );
+      const repos = getRepos(emp, currentWeek);
+      const tr = document.createElement("tr");
+      let html = '<td class="name-cell">' + emp.name + "</td>";
+
+      weekDates.forEach((date, d) => {
+        let status;
+        if (override && override.days && override.days[d] !== undefined) {
+          status = override.days[d];
+        } else if (conge) {
+          status = "conge";
+        } else if (repos === "indefini") {
+          status = "present";
+        } else if (repos.includes(d)) {
+          status = "repos";
+        } else {
+          status = "present";
+        }
+
+        const hsup = getHsupForDay(emp.id, date);
+        const hsupBadge =
+          hsup && isAdmin
+            ? `<span class="hsup-badge" title="${hsup.note || ""}">${hsup.hours > 0 ? "+" : ""}${hsup.hours}h</span>`
+            : "";
+        const hsupBtn = isAdmin
+          ? `<button class="btn-hsup" onclick="openHsupModal('${emp.id}','${emp.name}','${dateKey(date)}')" title="Heures sup">＋</button>`
+          : "";
+
+        if (isAdmin) {
+          html += `<td>
+            <select class="cell-select ${status}" onchange="updateDay('${emp.id}',${d},this.value)">
+              <option value="present" ${status === "present" ? "selected" : ""}>Présent</option>
+              <option value="repos"   ${status === "repos" ? "selected" : ""}>Repos</option>
+              <option value="absent"  ${status === "absent" ? "selected" : ""}>Absent</option>
+              <option value="conge"   ${status === "conge" ? "selected" : ""}>Congé</option>
+              <option value="arret"   ${status === "arret" ? "selected" : ""}>Arrêt de travail</option>
+            </select>
+            <div class="cell-bottom">${hsupBadge}${hsupBtn}</div>
+          </td>`;
+        } else {
+          html += `<td>
+            <select class="cell-select ${status}" disabled>
+              <option value="${status}" selected>${labelBadge(status)}</option>
+            </select>
+            <div class="cell-bottom">${hsupBadge}</div>
+          </td>`;
+        }
+      });
+
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// ── Heures supplémentaires ─────────────────────────────
+window.openHsupModal = (empId, empName, dateStr) => {
+  hsupTarget = { empId, dateStr };
+  const existing = (state.hsup || []).find(
+    (h) => h.empId === empId && h.date === dateStr,
+  );
+  document.getElementById("hsup-emp-name").textContent =
+    empName + " — " + dateStr.split("-").reverse().join("/");
+  document.getElementById("hsup-hours").value = existing
+    ? existing.hours
+    : "";
+  document.getElementById("hsup-note").value = existing
+    ? existing.note
+    : "";
+  document.getElementById("modal-hsup").classList.add("open");
+};
+
+window.saveHsup = async () => {
+  if (!hsupTarget) return;
+  const hours = parseFloat(document.getElementById("hsup-hours").value);
+  const note = document.getElementById("hsup-note").value.trim();
+  if (isNaN(hours)) return;
+
+  // Si 0 → on supprime l'entrée (annulation)
+  if (hours === 0) {
+    state.hsup = (state.hsup || []).filter(
+      (h) =>
+        !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
+    );
+    await saveToFirestore();
+    closeModal("modal-hsup");
+    return;
+  }
+
+  if (!state.hsup) state.hsup = [];
+  // Supprimer l'existant si présent
+  state.hsup = state.hsup.filter(
+    (h) =>
+      !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
+  );
+  state.hsup.push({
+    empId: hsupTarget.empId,
+    date: hsupTarget.dateStr,
+    hours,
+    note,
+  });
+  await saveToFirestore();
+  closeModal("modal-hsup");
+};
+
+window.deleteHsup = async (empId, dateStr) => {
+  state.hsup = (state.hsup || []).filter(
+    (h) => !(h.empId === empId && h.date === dateStr),
+  );
+  await saveToFirestore();
+};
+
+// ── Résumé mensuel ─────────────────────────────────────
+function renderResume() {
+  document.getElementById("month-info").textContent =
+    MONTH_NAMES[resumeMonth] + " " + resumeYear;
+
+  const workDays = getWorkDaysOfMonth(resumeMonth, resumeYear);
+  const el = document.getElementById("resume-content");
+  el.innerHTML = "";
+
+  (state.shops || []).forEach((shop) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.marginBottom = "1rem";
+
+    const header = document.createElement("div");
+    header.className = "card-header";
+    header.innerHTML = "<h3>" + shop.name + "</h3>";
+    card.appendChild(header);
+
+    if (!shop.employees || !shop.employees.length) {
+      const body = document.createElement("div");
+      body.className = "card-body";
+      body.innerHTML = '<div class="empty-state">Aucun salarié</div>';
+      card.appendChild(body);
+      el.appendChild(card);
+      return;
+    }
+
+    const table = document.createElement("table");
+    table.style.cssText =
+      "width:100%;border-collapse:collapse;font-size:13px;";
+
+    const thStyle =
+      "padding:8px 12px;background:var(--surface2);font-size:12px;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);text-align:center;";
+    table.innerHTML = `<thead><tr>
+      <th style="${thStyle}text-align:left;width:120px">Salarié</th>
+      <th style="${thStyle}">Jours travaillés</th>
+      <th style="${thStyle}">Jours de congé</th>
+      <th style="${thStyle}">Absences</th>
+      <th style="${thStyle}">Arrêts de travail</th>
+      <th style="${thStyle}">Jours de repos</th>
+      <th style="${thStyle}">Heures sup</th>
+      <th style="${thStyle}">Semaines de congé</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement("tbody");
+
+    shop.employees.forEach((emp, i) => {
+      let joursPresent = 0,
+        joursConge = 0,
+        joursAbsent = 0,
+        joursArret = 0,
+        joursRepos = 0;
+      let totalHsup = 0;
+      const congeWeeks = new Set();
+      const hsupDetails = [];
+
+      workDays.forEach((date) => {
+        const status = getDayStatus(emp, date);
+        if (status === "present") joursPresent++;
+        else if (status === "conge") {
+          joursConge++;
+          congeWeeks.add("S" + getISOWeek(date));
+        } else if (status === "absent") joursAbsent++;
+        else if (status === "arret") joursArret++;
+        else if (status === "repos") joursRepos++;
+
+        const hsup = getHsupForDay(emp.id, date);
+        if (hsup) {
+          totalHsup += hsup.hours;
+          hsupDetails.push({
+            date: date.getDate() + "/" + (date.getMonth() + 1),
+            hours: hsup.hours,
+            note: hsup.note,
+          });
+        }
+      });
+
+      const congeDetail = congeWeeks.size
+        ? [...congeWeeks].join(", ")
+        : "—";
+      const hsupTooltip = hsupDetails.length
+        ? hsupDetails
+            .map(
+              (h) =>
+                h.date +
+                ": +" +
+                h.hours +
+                "h" +
+                (h.note ? " (" + h.note + ")" : ""),
+            )
+            .join("\n")
+        : "";
+      const isLast = i === shop.employees.length - 1;
+
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = isLast
+        ? "none"
+        : "0.5px solid var(--border)";
+
+      const tdStyle = "padding:8px 12px;text-align:center;";
+      tr.innerHTML = `
+        <td style="padding:8px 12px;font-weight:500;color:var(--text)">${emp.name}</td>
+        <td style="${tdStyle}"><span style="background:var(--present-bg);color:var(--present-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursPresent}j</span></td>
+        <td style="${tdStyle}"><span style="background:var(--conge-bg);color:var(--conge-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursConge}j</span></td>
+        <td style="${tdStyle}">${
+          joursAbsent > 0
+            ? `<span style="background:var(--repos-bg);color:var(--repos-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursAbsent}j</span>`
+            : `<span style="color:var(--text3);font-size:12px">—</span>`
+        }</td>
+        <td style="${tdStyle}">${
+          joursArret > 0
+            ? `<span style="background:var(--arret-bg);color:var(--arret-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursArret}j</span>`
+            : `<span style="color:var(--text3);font-size:12px">—</span>`
+        }</td>
+        <td style="${tdStyle}"><span style="background:var(--indef-bg);color:var(--indef-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursRepos}j</span></td>
+        <td style="${tdStyle}">${
+          totalHsup > 0 || totalHsup < 0
+            ? `<span class="hsup-total" title="${hsupTooltip}">${totalHsup > 0 ? "+" : ""}${totalHsup}h</span>`
+            : `<span style="color:var(--text3);font-size:12px">—</span>`
+        }</td>
+        <td style="padding:8px 12px;text-align:center;font-size:11px;color:var(--text2)">${congeDetail}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    card.appendChild(table);
+    el.appendChild(card);
+  });
+}
+
+// ── Congés ─────────────────────────────────────────────
+function findEmp(empId) {
+  for (const shop of state.shops || []) {
+    const e = shop.employees.find((e) => e.id === empId);
+    if (e) return e;
+  }
+  return null;
+}
+
+function renderConges() {
+  const el = document.getElementById("conges-list");
+  if (!state.conges || !state.conges.length) {
+    el.innerHTML =
+      '<div class="empty-state">Aucun congé enregistré.</div>';
+    return;
+  }
+  const sorted = [...state.conges].sort(
+    (a, b) => a.year - b.year || a.week - b.week,
+  );
+  el.innerHTML = "";
+  const grouped = {};
+  sorted.forEach((c) => {
+    const emp = findEmp(c.empId);
+    if (!grouped[c.empId])
+      grouped[c.empId] = { name: emp ? emp.name : c.empId, items: [] };
+    grouped[c.empId].items.push(c);
+  });
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;gap:12px;";
+  Object.values(grouped).forEach((g) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      '<div class="card-header"><h3>' + g.name + "</h3></div>";
+    const body = document.createElement("div");
+    body.className = "card-body";
+    g.items.forEach((c) => {
+      const row = document.createElement("div");
+      row.className = "row-flex";
+      row.innerHTML =
+        '<span class="conge-label">Semaine ' +
+        c.week +
+        " · " +
+        c.year +
+        '<span class="conge-date">' +
+        getWeekDates(c.week, c.year) +
+        "</span></span>";
+      const del = document.createElement("button");
+      del.className = "btn small danger";
+      del.textContent = "Supprimer";
+      del.onclick = () => deleteConge(c.empId, c.week, c.year);
+      row.appendChild(del);
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    wrap.appendChild(card);
+  });
+  el.appendChild(wrap);
+}
+
+window.openCongeModal = () => {
+  const sel = document.getElementById("conge-emp");
+  sel.innerHTML = "";
+  (state.shops || []).forEach((shop) => {
+    shop.employees.forEach((emp) => {
+      const opt = document.createElement("option");
+      opt.value = emp.id;
+      opt.textContent = emp.name + " (" + shop.name + ")";
+      sel.appendChild(opt);
+    });
+  });
+  document.getElementById("conge-week").value = currentWeek;
+  document.getElementById("conge-year").value = currentYear;
+  document.getElementById("modal-conge").classList.add("open");
+};
+
+window.saveConge = async () => {
+  const empId = document.getElementById("conge-emp").value;
+  const week = parseInt(document.getElementById("conge-week").value);
+  const year = parseInt(document.getElementById("conge-year").value);
+  if (!empId || isNaN(week) || isNaN(year)) return;
+  if (
+    !(state.conges || []).some(
+      (c) => c.empId === empId && c.week === week && c.year === year,
+    )
+  ) {
+    state.conges = [...(state.conges || []), { empId, week, year }];
+    await saveToFirestore();
+  }
+  closeModal("modal-conge");
+};
+
+window.deleteConge = async (empId, week, year) => {
+  state.conges = (state.conges || []).filter(
+    (c) => !(c.empId === empId && c.week === week && c.year === year),
+  );
+  await saveToFirestore();
+};
+
+// ── Équipes ────────────────────────────────────────────
+function renderEquipes() {
+  const el = document.getElementById("equipes-cards");
+  el.innerHTML = "";
+  (state.shops || []).forEach((shop) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const header = document.createElement("div");
+    header.className = "card-header";
+    header.innerHTML = "<h3>" + shop.name + "</h3>";
+    const acts = document.createElement("div");
+    acts.style.cssText = "display:flex;gap:6px;";
+    const btnAdd = document.createElement("button");
+    btnAdd.className = "btn small";
+    btnAdd.textContent = "+ Salarié";
+    btnAdd.onclick = () => openEmpModal(shop.id, null);
+    const btnDel = document.createElement("button");
+    btnDel.className = "btn small danger";
+    btnDel.textContent = "Supprimer";
+    btnDel.onclick = () => deleteShop(shop.id);
+    acts.appendChild(btnAdd);
+    acts.appendChild(btnDel);
+    header.appendChild(acts);
+    card.appendChild(header);
+    const body = document.createElement("div");
+    body.className = "card-body";
+    if (!shop.employees || !shop.employees.length) {
+      body.innerHTML = '<div class="empty-state">Aucun salarié</div>';
+    }
+    (shop.employees || []).forEach((emp) => {
+      let reposLabel = "";
+      if (emp.indefini) reposLabel = "Repos indéfini";
+      else if (emp.alt)
+        reposLabel =
+          "Alterné : " +
+          DAY_NAMES[emp.altEven] +
+          " / " +
+          DAY_NAMES[emp.altOdd];
+      else if (emp.repos && emp.repos.length)
+        reposLabel =
+          "Repos : " + emp.repos.map((d) => DAY_NAMES[d]).join(", ");
+      else reposLabel = "Pas de repos défini";
+      const row = document.createElement("div");
+      row.className = "employee-row";
+      row.innerHTML =
+        '<div class="employee-info"><div class="employee-name">' +
+        emp.name +
+        '</div><div class="employee-repos">' +
+        reposLabel +
+        "</div></div>";
+      const ea = document.createElement("div");
+      ea.className = "employee-actions";
+      const btnE = document.createElement("button");
+      btnE.className = "btn small";
+      btnE.textContent = "Modifier";
+      btnE.onclick = () => openEmpModal(shop.id, emp.id);
+      const btnD = document.createElement("button");
+      btnD.className = "btn small danger";
+      btnD.textContent = "Supprimer";
+      btnD.onclick = () => deleteEmployee(shop.id, emp.id);
+      ea.appendChild(btnE);
+      ea.appendChild(btnD);
+      row.appendChild(ea);
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+
+window.openShopModal = (id) => {
+  editingShopId = id;
+  document.getElementById("shop-modal-title").textContent = id
+    ? "Modifier la boutique"
+    : "Nouvelle boutique";
+  document.getElementById("shop-name").value = id
+    ? (state.shops.find((s) => s.id === id) || {}).name || ""
+    : "";
+  document.getElementById("modal-shop").classList.add("open");
+};
+
+window.saveShop = async () => {
+  const name = document.getElementById("shop-name").value.trim();
+  if (!name) return;
+  if (editingShopId) {
+    state.shops.find((s) => s.id === editingShopId).name = name;
+  } else {
+    state.shops = [
+      ...(state.shops || []),
+      { id: "shop_" + Date.now(), name, employees: [] },
+    ];
+  }
+  await saveToFirestore();
+  closeModal("modal-shop");
+};
+
+window.deleteShop = async (id) => {
+  if (!confirm("Supprimer cette boutique et tous ses salariés ?")) return;
+  state.shops = state.shops.filter((s) => s.id !== id);
+  await saveToFirestore();
+};
+
+window.openEmpModal = (shopId, empId) => {
+  editingEmpShopId = shopId;
+  editingEmpId = empId;
+  const sel = document.getElementById("emp-shop");
+  sel.innerHTML = "";
+  (state.shops || []).forEach((s) => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    if (s.id === shopId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById("emp-modal-title").textContent = empId
+    ? "Modifier le salarié"
+    : "Nouveau salarié";
+  document.getElementById("repos-alt-check").checked = false;
+  document.getElementById("repos-indef-check").checked = false;
+  document.getElementById("alt-repos-group").style.display = "none";
+  document.getElementById("repos-selector").style.display = "flex";
+  document
+    .querySelectorAll(".repos-day")
+    .forEach((d) => d.classList.remove("selected"));
+  if (empId) {
+    const shop = state.shops.find((s) => s.id === shopId);
+    const emp = shop.employees.find((e) => e.id === empId);
+    document.getElementById("emp-name").value = emp.name;
+    if (emp.indefini) {
+      document.getElementById("repos-indef-check").checked = true;
+      document.getElementById("repos-selector").style.display = "none";
+    } else if (emp.alt) {
+      document.getElementById("repos-alt-check").checked = true;
+      document.getElementById("alt-repos-group").style.display = "block";
+      document.getElementById("repos-selector").style.display = "none";
+      document.getElementById("alt-even").value = emp.altEven;
+      document.getElementById("alt-odd").value = emp.altOdd;
+    } else {
+      (emp.repos || []).forEach((d) =>
+        document
+          .querySelector('.repos-day[data-day="' + d + '"]')
+          .classList.add("selected"),
+      );
+    }
+  } else {
+    document.getElementById("emp-name").value = "";
+  }
+  document.getElementById("modal-emp").classList.add("open");
+};
+
+window.toggleAltRepos = () => {
+  const alt = document.getElementById("repos-alt-check").checked;
+  if (alt) document.getElementById("repos-indef-check").checked = false;
+  document.getElementById("alt-repos-group").style.display = alt
+    ? "block"
+    : "none";
+  document.getElementById("repos-selector").style.display = alt
+    ? "none"
+    : "flex";
+};
+
+window.toggleIndefinit = () => {
+  const indef = document.getElementById("repos-indef-check").checked;
+  if (indef) document.getElementById("repos-alt-check").checked = false;
+  document.getElementById("alt-repos-group").style.display = "none";
+  document.getElementById("repos-selector").style.display = indef
+    ? "none"
+    : "flex";
+};
+
+document.querySelectorAll(".repos-day").forEach((el) => {
+  el.onclick = () => el.classList.toggle("selected");
+});
+
+window.saveEmployee = async () => {
+  const name = document.getElementById("emp-name").value.trim();
+  const targetShopId = document.getElementById("emp-shop").value;
+  const alt = document.getElementById("repos-alt-check").checked;
+  const indefini = document.getElementById("repos-indef-check").checked;
+  if (!name) return;
+  const repos = Array.from(
+    document.querySelectorAll(".repos-day.selected"),
+  ).map((d) => parseInt(d.dataset.day));
+  const altEven = parseInt(document.getElementById("alt-even").value);
+  const altOdd = parseInt(document.getElementById("alt-odd").value);
+  if (editingEmpId) {
+    const shop = state.shops.find((s) => s.id === editingEmpShopId);
+    const emp = shop.employees.find((e) => e.id === editingEmpId);
+    Object.assign(emp, { name, repos, alt, altEven, altOdd, indefini });
+    if (targetShopId !== editingEmpShopId) {
+      shop.employees = shop.employees.filter(
+        (e) => e.id !== editingEmpId,
+      );
+      state.shops.find((s) => s.id === targetShopId).employees.push(emp);
+    }
+  } else {
+    const emp = {
+      id: "emp_" + Date.now(),
+      name,
+      repos,
+      alt,
+      altEven,
+      altOdd,
+      indefini,
+    };
+    state.shops.find((s) => s.id === targetShopId).employees.push(emp);
+  }
+  await saveToFirestore();
+  closeModal("modal-emp");
+};
+
+window.deleteEmployee = async (shopId, empId) => {
+  const shop = state.shops.find((s) => s.id === shopId);
+  shop.employees = shop.employees.filter((e) => e.id !== empId);
+  state.conges = (state.conges || []).filter((c) => c.empId !== empId);
+  state.hsup = (state.hsup || []).filter((h) => h.empId !== empId);
+  await saveToFirestore();
+};
+
+window.updateDay = async (empId, day, value) => {
+  if (!isAdmin) return;
+  if (!state.overrides) state.overrides = [];
+  let override = state.overrides.find(
+    (o) =>
+      o.empId === empId &&
+      o.week === currentWeek &&
+      o.year === currentYear,
+  );
+  if (!override) {
+    override = { empId, week: currentWeek, year: currentYear, days: {} };
+    state.overrides.push(override);
+  }
+  if (!override.days) override.days = {};
+  override.days[day] = value;
+  await saveToFirestore();
+};
+
+window.closeModal = (id) =>
+  document.getElementById(id).classList.remove("open");
+
+document.querySelectorAll(".modal-bg").forEach((bg) => {
+  bg.addEventListener("click", (e) => {
+    if (e.target === bg) bg.classList.remove("open");
+  });
+});
+
+loadFromFirestore();
