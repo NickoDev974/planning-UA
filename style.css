@@ -19,6 +19,8 @@
   --conge-text: #8a5a00;
   --arret-bg: #f0ebff;
   --arret-text: #5a3ca0;
+  --ecole-bg: #eaf6ff;
+  --ecole-text: #21628d;
   --indef-bg: #f0efe9;
   --indef-text: #7a7870;
   --radius: 8px;
@@ -279,6 +281,10 @@ tr:last-child td {
 .badge.conge {
   background: var(--conge-bg);
   color: var(--conge-text);
+}
+.badge.ecole {
+  background: var(--ecole-bg);
+  color: var(--ecole-text);
 }
 .badge.indef {
   background: var(--indef-bg);
@@ -600,6 +606,12 @@ body.is-admin .admin-badge {
 .cell-select.arret {
   background-color: var(--arret-bg) !important;
   color: var(--arret-text) !important;
+}
+
+/* École = bleu clair */
+.cell-select.ecole {
+  background-color: var(--ecole-bg) !important;
+  color: var(--ecole-text) !important;
 }
 /* heures sup buton */
 .hsup-badge {

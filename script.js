@@ -27,14 +27,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-const DAY_NAMES = [
-  "Lundi",
-  "Mardi",
-  "Mercredi",
-  "Jeudi",
-  "Vendredi",
-  "Samedi",
-];
+const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 const MONTH_NAMES = [
   "Janvier",
   "Février",
@@ -392,8 +385,7 @@ function getDayStatus(emp, date) {
 function getHsupForDay(empId, date) {
   const key = dateKey(date);
   return (
-    (state.hsup || []).find((h) => h.empId === empId && h.date === key) ||
-    null
+    (state.hsup || []).find((h) => h.empId === empId && h.date === key) || null
   );
 }
 
@@ -405,6 +397,7 @@ function labelBadge(status) {
       conge: "Congé",
       absent: "Absent",
       arret: "Arrêt de travail",
+      ecole: "École",
       indef: "?",
     }[status] || status
   );
@@ -444,19 +437,14 @@ function renderPlanning() {
 
     if (!shop.employees || !shop.employees.length) {
       const e = document.createElement("tr");
-      e.innerHTML =
-        '<td colspan="7" class="empty-state">Aucun salarié</td>';
+      e.innerHTML = '<td colspan="7" class="empty-state">Aucun salarié</td>';
       tbody.appendChild(e);
       return;
     }
 
     shop.employees.forEach((emp) => {
       const conge = isEnConge(emp.id, currentWeek, currentYear);
-      const override = getWeeklyOverride(
-        emp.id,
-        currentWeek,
-        currentYear,
-      );
+      const override = getWeeklyOverride(emp.id, currentWeek, currentYear);
       const repos = getRepos(emp, currentWeek);
       const tr = document.createElement("tr");
       let html = '<td class="name-cell">' + emp.name + "</td>";
@@ -492,6 +480,7 @@ function renderPlanning() {
               <option value="absent"  ${status === "absent" ? "selected" : ""}>Absent</option>
               <option value="conge"   ${status === "conge" ? "selected" : ""}>Congé</option>
               <option value="arret"   ${status === "arret" ? "selected" : ""}>Arrêt de travail</option>
+              <option value="ecole"   ${status === "ecole" ? "selected" : ""}>École</option>
             </select>
             <div class="cell-bottom">${hsupBadge}${hsupBtn}</div>
           </td>`;
@@ -519,12 +508,8 @@ window.openHsupModal = (empId, empName, dateStr) => {
   );
   document.getElementById("hsup-emp-name").textContent =
     empName + " — " + dateStr.split("-").reverse().join("/");
-  document.getElementById("hsup-hours").value = existing
-    ? existing.hours
-    : "";
-  document.getElementById("hsup-note").value = existing
-    ? existing.note
-    : "";
+  document.getElementById("hsup-hours").value = existing ? existing.hours : "";
+  document.getElementById("hsup-note").value = existing ? existing.note : "";
   document.getElementById("modal-hsup").classList.add("open");
 };
 
@@ -537,8 +522,7 @@ window.saveHsup = async () => {
   // Si 0 → on supprime l'entrée (annulation)
   if (hours === 0) {
     state.hsup = (state.hsup || []).filter(
-      (h) =>
-        !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
+      (h) => !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
     );
     await saveToFirestore();
     closeModal("modal-hsup");
@@ -548,8 +532,7 @@ window.saveHsup = async () => {
   if (!state.hsup) state.hsup = [];
   // Supprimer l'existant si présent
   state.hsup = state.hsup.filter(
-    (h) =>
-      !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
+    (h) => !(h.empId === hsupTarget.empId && h.date === hsupTarget.dateStr),
   );
   state.hsup.push({
     empId: hsupTarget.empId,
@@ -597,8 +580,7 @@ function renderResume() {
     }
 
     const table = document.createElement("table");
-    table.style.cssText =
-      "width:100%;border-collapse:collapse;font-size:13px;";
+    table.style.cssText = "width:100%;border-collapse:collapse;font-size:13px;";
 
     const thStyle =
       "padding:8px 12px;background:var(--surface2);font-size:12px;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);text-align:center;";
@@ -608,6 +590,7 @@ function renderResume() {
       <th style="${thStyle}">Jours de congé</th>
       <th style="${thStyle}">Absences</th>
       <th style="${thStyle}">Arrêts de travail</th>
+      <th style="${thStyle}">École</th>
       <th style="${thStyle}">Jours de repos</th>
       <th style="${thStyle}">Heures sup</th>
       <th style="${thStyle}">Semaines de congé</th>
@@ -620,6 +603,7 @@ function renderResume() {
         joursConge = 0,
         joursAbsent = 0,
         joursArret = 0,
+        joursEcole = 0,
         joursRepos = 0;
       let totalHsup = 0;
       const congeWeeks = new Set();
@@ -633,6 +617,7 @@ function renderResume() {
           congeWeeks.add("S" + getISOWeek(date));
         } else if (status === "absent") joursAbsent++;
         else if (status === "arret") joursArret++;
+        else if (status === "ecole") joursEcole++;
         else if (status === "repos") joursRepos++;
 
         const hsup = getHsupForDay(emp.id, date);
@@ -646,9 +631,7 @@ function renderResume() {
         }
       });
 
-      const congeDetail = congeWeeks.size
-        ? [...congeWeeks].join(", ")
-        : "—";
+      const congeDetail = congeWeeks.size ? [...congeWeeks].join(", ") : "—";
       const hsupTooltip = hsupDetails.length
         ? hsupDetails
             .map(
@@ -664,9 +647,7 @@ function renderResume() {
       const isLast = i === shop.employees.length - 1;
 
       const tr = document.createElement("tr");
-      tr.style.borderBottom = isLast
-        ? "none"
-        : "0.5px solid var(--border)";
+      tr.style.borderBottom = isLast ? "none" : "0.5px solid var(--border)";
 
       const tdStyle = "padding:8px 12px;text-align:center;";
       tr.innerHTML = `
@@ -681,6 +662,11 @@ function renderResume() {
         <td style="${tdStyle}">${
           joursArret > 0
             ? `<span style="background:var(--arret-bg);color:var(--arret-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursArret}j</span>`
+            : `<span style="color:var(--text3);font-size:12px">—</span>`
+        }</td>
+        <td style="${tdStyle}">${
+          joursEcole > 0
+            ? `<span style="background:var(--ecole-bg);color:var(--ecole-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursEcole}j</span>`
             : `<span style="color:var(--text3);font-size:12px">—</span>`
         }</td>
         <td style="${tdStyle}"><span style="background:var(--indef-bg);color:var(--indef-text);padding:2px 10px;border-radius:5px;font-size:12px;font-weight:500">${joursRepos}j</span></td>
@@ -712,8 +698,7 @@ function findEmp(empId) {
 function renderConges() {
   const el = document.getElementById("conges-list");
   if (!state.conges || !state.conges.length) {
-    el.innerHTML =
-      '<div class="empty-state">Aucun congé enregistré.</div>';
+    el.innerHTML = '<div class="empty-state">Aucun congé enregistré.</div>';
     return;
   }
   const sorted = [...state.conges].sort(
@@ -732,8 +717,7 @@ function renderConges() {
   Object.values(grouped).forEach((g) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML =
-      '<div class="card-header"><h3>' + g.name + "</h3></div>";
+    card.innerHTML = '<div class="card-header"><h3>' + g.name + "</h3></div>";
     const body = document.createElement("div");
     body.className = "card-body";
     g.items.forEach((c) => {
@@ -833,13 +817,9 @@ function renderEquipes() {
       if (emp.indefini) reposLabel = "Repos indéfini";
       else if (emp.alt)
         reposLabel =
-          "Alterné : " +
-          DAY_NAMES[emp.altEven] +
-          " / " +
-          DAY_NAMES[emp.altOdd];
+          "Alterné : " + DAY_NAMES[emp.altEven] + " / " + DAY_NAMES[emp.altOdd];
       else if (emp.repos && emp.repos.length)
-        reposLabel =
-          "Repos : " + emp.repos.map((d) => DAY_NAMES[d]).join(", ");
+        reposLabel = "Repos : " + emp.repos.map((d) => DAY_NAMES[d]).join(", ");
       else reposLabel = "Pas de repos défini";
       const row = document.createElement("div");
       row.className = "employee-row";
@@ -989,9 +969,7 @@ window.saveEmployee = async () => {
     const emp = shop.employees.find((e) => e.id === editingEmpId);
     Object.assign(emp, { name, repos, alt, altEven, altOdd, indefini });
     if (targetShopId !== editingEmpShopId) {
-      shop.employees = shop.employees.filter(
-        (e) => e.id !== editingEmpId,
-      );
+      shop.employees = shop.employees.filter((e) => e.id !== editingEmpId);
       state.shops.find((s) => s.id === targetShopId).employees.push(emp);
     }
   } else {
@@ -1023,9 +1001,7 @@ window.updateDay = async (empId, day, value) => {
   if (!state.overrides) state.overrides = [];
   let override = state.overrides.find(
     (o) =>
-      o.empId === empId &&
-      o.week === currentWeek &&
-      o.year === currentYear,
+      o.empId === empId && o.week === currentWeek && o.year === currentYear,
   );
   if (!override) {
     override = { empId, week: currentWeek, year: currentYear, days: {} };
